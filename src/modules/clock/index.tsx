@@ -108,7 +108,11 @@ export const clockModule: IslandModule = {
 					}
 				: {
 						left: <span className="pl-2 text-[14px] font-bold whitespace-nowrap tabular-nums">{timeOf(now)}</span>,
-						right: <span className="text-[12.5px] font-semibold whitespace-nowrap text-text-dim capitalize">{dayOf(now)}</span>,
+						right: (
+							<span className="text-[12.5px] font-semibold whitespace-nowrap text-text-dim capitalize">
+								{dayOf(now)}
+							</span>
+						),
 						width: 265,
 					},
 			expanded: <ClockPanel calendar={calendar} highlight={due?.id} />,
