@@ -99,7 +99,7 @@ pub fn run() {
 
             tray::setup(&handle)?;
             tray::enable_autostart_on_first_run(&handle);
-            updater::spawn(handle.clone());
+            // Version personnelle : pas de mise à jour automatique, elle remplacerait nos changements.
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

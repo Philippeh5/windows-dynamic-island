@@ -1,0 +1,39 @@
+name: Build
+
+# Compile l'installeur Windows (non signé) de notre version de l'île.
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths-ignore: ["website/**", "docs/**", "*.md"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install Rust
+        working-directory: src-tauri
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - run: bun install --frozen-lockfile
+      - name: Build installer
+        run: bun run app:build:local --bundles nsis
+      - name: Test
+        working-directory: src-tauri
+        run: cargo test --lib
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installeur
+          path: src-tauri/target/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
