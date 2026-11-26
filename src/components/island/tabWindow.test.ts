@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { tabWindow, visibleTabs } from "./tabWindow";
+import { barWidthFor, tabWindow, visibleTabs } from "./tabWindow";
 
 describe("tabWindow", () => {
 	test("few tabs never scroll", () => {
@@ -44,13 +44,14 @@ describe("tabWindow", () => {
 });
 
 describe("visibleTabs", () => {
-	test("a wide island shows every tab it can", () => {
-		expect(visibleTabs(520)).toBe(7);
-		expect(visibleTabs(720)).toBe(13);
+	test("a bar wide enough for every tab shows them all", () => {
+		for (const iconsOnly of [true, false]) {
+			for (const count of [7, 8, 12]) expect(visibleTabs(barWidthFor(count, iconsOnly), iconsOnly)).toBe(count);
+		}
 	});
 
 	test("never fewer than the default", () => {
-		expect(visibleTabs(0)).toBe(6);
-		expect(visibleTabs(300)).toBe(6);
+		expect(visibleTabs(0, true)).toBe(6);
+		expect(visibleTabs(300, false)).toBe(6);
 	});
 });

@@ -1,9 +1,20 @@
-import { LayoutGridIcon, PinIcon, RotateCwIcon, SettingsIcon } from "lucide-react";
+import {
+	LayoutGridIcon,
+	MinusIcon,
+	PinIcon,
+	PlusIcon,
+	RotateCwIcon,
+	SettingsIcon,
+	Volume2Icon,
+	VolumeXIcon,
+} from "lucide-react";
 import { motion, type Transition } from "motion/react";
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { tv } from "tailwind-variants";
 import { command } from "../../core/bridge";
+import { cn } from "../../core/cn";
 import { useT } from "../../core/i18n";
+import { setSetting, useSetting, voiceSetting, ZOOM_STEPS, zoomSetting } from "../../core/settings";
 import type { ModuleEntry } from "../../core/types";
 import { LAUNCHER } from "../../core/useIslandController";
 import { MAX_VISIBLE_TABS, tabWindow, visibleTabs } from "./tabWindow";
@@ -23,8 +34,8 @@ function edgeMask(left: boolean, right: boolean) {
 
 const tabs = tv({
 	slots: {
-		/** Room on the right for the pin, which sits apart from the tabs at the far edge. */
-		base: "relative mb-2.5 flex gap-1 pr-9.5",
+		/** Tabs and buttons together, centered. */
+		base: "relative mb-2.5 flex justify-center gap-1",
 		/** Clips the module tabs to the window on show (see `tabWindow`); shrinks before it overlaps the buttons. */
 		clip: "relative min-w-0 overflow-hidden",
 		/** Every module tab in one row, slid so the window's first tab sits at the left edge. */
@@ -34,15 +45,15 @@ const tabs = tv({
 		part: "relative grid place-items-center",
 		label: "relative max-w-32 truncate",
 		dot: "relative size-1.25 rounded-full bg-ok",
-		extra: "ml-auto flex items-center gap-1.5",
+		extra: "flex items-center gap-1.5",
 		gear: "grid size-7.5 place-items-center rounded-full text-text-faint transition-colors duration-200 hover:bg-white/8 hover:text-text",
-		pin: "absolute top-1/2 right-0 grid size-7.5 -translate-y-1/2 place-items-center rounded-full text-text-faint transition-colors duration-200 hover:bg-white/8 hover:text-text",
+		pin: "grid size-7.5 place-items-center rounded-full text-text-faint transition-colors duration-200 hover:bg-white/8 hover:text-text",
 	},
 	variants: {
 		active: { true: { tab: "text-text" } },
 		pinned: { true: { pin: "bg-white/10 text-text" } },
-		/** The launcher's grid button, pushed right with the gear. */
-		launcher: { true: { tab: "ml-auto w-7.5 justify-center p-0" } },
+		/** The launcher's grid button. */
+		launcher: { true: { tab: "w-7.5 justify-center p-0" } },
 		/** Windows Island: round icon tabs, ringed in the module's color. */
 		iconsOnly: {
 			true: {
@@ -52,14 +63,12 @@ const tabs = tv({
 			},
 		},
 		bottom: {
-			true: { base: "m-0 mt-2 justify-center px-9.5", extra: "ml-1.5", gear: "ml-1.5" },
+			true: { base: "m-0 mt-2" },
 		},
 	},
 	compoundVariants: [
 		{ iconsOnly: true, active: true, class: { tab: "opacity-100" } },
 		{ iconsOnly: true, launcher: true, class: { tab: "w-8 [--tab-accent:#fff]" } },
-		/** Centered at the bottom, the launcher sits with the tabs; on top it stays pushed right. */
-		{ iconsOnly: true, launcher: true, bottom: true, class: { tab: "ml-1.5" } },
 	],
 });
 
@@ -97,12 +106,12 @@ export function Tabs({
 	useLayoutEffect(() => {
 		const bar = barRef.current;
 		if (!bar) return;
-		const check = () => setSize(visibleTabs(bar.clientWidth));
+		const check = () => setSize(visibleTabs(bar.clientWidth, iconsOnly));
 		check();
 		const observer = new ResizeObserver(check);
 		observer.observe(bar);
 		return () => observer.disconnect();
-	}, []);
+	}, [iconsOnly]);
 
 	// Too many modules: show a window of them that slides along with the selection.
 	const selectedIndex = entries.findIndex((e) => e.module.id === current);
@@ -195,6 +204,9 @@ export function Tabs({
 					{extra}
 				</div>
 			)}
+			<ZoomButton direction={-1} className={s.gear()} />
+			<ZoomButton direction={1} className={s.gear()} />
+			<VoiceButton className={s.gear()} />
 			<motion.button
 				className={s.gear()}
 				title={t("island.restart")}
@@ -242,5 +254,52 @@ export function Tabs({
 				</motion.span>
 			</motion.button>
 		</div>
+	);
+}
+
+/** Smaller or larger: the open island and everything in it. */
+function ZoomButton({ direction, className }: { direction: -1 | 1; className: string }) {
+	const t = useT();
+	const zoom = useSetting(zoomSetting);
+	const next = ZOOM_STEPS[nearestStep(zoom) + direction];
+	const label = t(direction > 0 ? "island.bigger" : "island.smaller");
+	return (
+		<button
+			type="button"
+			className={cn(className, next === undefined && "opacity-30")}
+			title={label}
+			aria-label={label}
+			disabled={next === undefined}
+			onClick={(e) => {
+				e.stopPropagation();
+				if (next !== undefined) setSetting(zoomSetting, next);
+			}}
+		>
+			{direction > 0 ? <PlusIcon size={14} /> : <MinusIcon size={14} />}
+		</button>
+	);
+}
+
+const nearestStep = (zoom: number) =>
+	ZOOM_STEPS.reduce((best, step, i) => (Math.abs(step - zoom) < Math.abs(ZOOM_STEPS[best] - zoom) ? i : best), 0);
+
+function VoiceButton({ className }: { className: string }) {
+	const t = useT();
+	const on = useSetting(voiceSetting);
+	const label = t(on ? "island.voiceOff" : "island.voiceOn");
+	return (
+		<button
+			type="button"
+			className={cn(className, on && "text-text")}
+			title={label}
+			aria-label={label}
+			aria-pressed={on}
+			onClick={(e) => {
+				e.stopPropagation();
+				setSetting(voiceSetting, !on);
+			}}
+		>
+			{on ? <Volume2Icon size={15} /> : <VolumeXIcon size={15} />}
+		</button>
 	);
 }

@@ -1,13 +1,16 @@
 /** Module tabs shown at once before the bar is measured; the rest slide in as the selection nears an edge. */
 export const MAX_VISIBLE_TABS = 6;
-/** A closed tab with its gap, and everything else on the bar (open tab's name, buttons). */
-const TAB = 34;
-const RESERVED = 250;
+/** A closed tab with its gap, and the rest of the bar: its buttons (and the open tab's name). */
+const TAB = 36;
+const reserved = (iconsOnly: boolean) => (iconsOnly ? 250 : 330);
 
 /** As many tabs as the bar has room for, never fewer than the default. */
-export function visibleTabs(barWidth: number): number {
-	return Math.max(MAX_VISIBLE_TABS, Math.floor((barWidth - RESERVED) / TAB));
+export function visibleTabs(barWidth: number, iconsOnly: boolean): number {
+	return Math.max(MAX_VISIBLE_TABS, Math.floor((barWidth - reserved(iconsOnly)) / TAB));
 }
+
+/** The bar width that shows `count` tabs: an open island is never narrower than that. */
+export const barWidthFor = (count: number, iconsOnly: boolean) => reserved(iconsOnly) + count * TAB;
 /** Tabs kept visible past the selected one, on each side, while more are hidden. */
 const MARGIN = 2;
 

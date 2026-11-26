@@ -55,6 +55,9 @@ function ReminderRight({ event, now, color }: { event: CalEvent; now: number; co
 	);
 }
 
+const timeOf = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const dayOf = (at: number) => new Date(at).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+
 export const clockModule: IslandModule = {
 	id: "clock",
 	title: "clock.title",
@@ -97,11 +100,17 @@ export const clockModule: IslandModule = {
 			priority: 55,
 			accent: CLOCK_RED,
 			icon: <CalendarIcon size={14} />,
-			compact: due && {
-				left: <ReminderLeft event={due} color={color} />,
-				right: <ReminderRight event={due} now={now} color={color} />,
-				width: 320,
-			},
+			compact: due
+				? {
+						left: <ReminderLeft event={due} color={color} />,
+						right: <ReminderRight event={due} now={now} color={color} />,
+						width: 320,
+					}
+				: {
+						left: <span className="pl-2 text-[14px] font-bold whitespace-nowrap tabular-nums">{timeOf(now)}</span>,
+						right: <span className="text-[12.5px] font-semibold whitespace-nowrap text-text-dim capitalize">{dayOf(now)}</span>,
+						width: 265,
+					},
 			expanded: <ClockPanel calendar={calendar} highlight={due?.id} />,
 			expandedSize: { width: 560, height: calendar?.calendars.length ? HEIGHT_WITH_EVENTS : 214 },
 			// Peeks at each reminder, and again when the event starts.

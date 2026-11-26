@@ -36,11 +36,17 @@ describe("free", () => {
 		expect(Math.round(at.y + pill.height / 2)).toBe(400);
 	});
 
-	test("grows downward in the upper half and upward in the lower half", () => {
-		const high = freeAt({ x: 960, y: 200 }, stage);
-		expect(Math.round(place(high, open, stage).y)).toBe(181);
-		const low = freeAt({ x: 960, y: 900 }, stage);
-		expect(Math.round(place(low, open, stage).y + open.height)).toBe(919);
+	test("tabs on top: the top edge stays put whatever the page's height", () => {
+		const spot = freeAt({ x: 960, y: 200 }, stage);
+		expect(Math.round(place(spot, open, stage).y)).toBe(181);
+		expect(Math.round(place(spot, { width: 560, height: 190 }, stage).y)).toBe(181);
+	});
+
+	test("tabs at the bottom: the bottom edge stays put", () => {
+		const spot = freeAt({ x: 960, y: 900 }, stage);
+		const at = (height: number) => place(spot, { width: 560, height }, stage, undefined, true).y + height;
+		expect(Math.round(at(466))).toBe(919);
+		expect(Math.round(at(190))).toBe(919);
 	});
 
 	test("never leaves the screen", () => {

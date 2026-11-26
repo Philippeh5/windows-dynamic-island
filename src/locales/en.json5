@@ -112,6 +112,10 @@
     pin: "Pin open",
     unpin: "Unpin",
     restart: "Restart the island",
+    smaller: "Smaller",
+    bigger: "Larger",
+    voiceOn: "Read aloud",
+    voiceOff: "Stop reading aloud",
   },
 
   // Settings' Behavior page: how the island opens and closes

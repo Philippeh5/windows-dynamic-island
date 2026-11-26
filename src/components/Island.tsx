@@ -7,6 +7,7 @@ import { useSyncLocale } from "../core/i18n";
 import { type IslandApi, IslandContext } from "../core/island";
 import { isSide } from "../core/placement";
 import { setIslandControls } from "../core/plugins/host";
+import { useSetting, zoomSetting } from "../core/settings";
 import { useGlass } from "../core/useGlass";
 import { useHitRects } from "../core/useHitRects";
 import { useIslandController } from "../core/useIslandController";
@@ -21,13 +22,17 @@ import { ambientWidth, BUBBLE, BUBBLE_GAP, geometry, variantOf } from "./island/
 import { launcherSize } from "./island/Launcher";
 import { Rim } from "./island/Rim";
 import { Surface } from "./island/Surface";
+import { statusLight } from "./island/statusLight";
+import { barWidthFor } from "./island/tabWindow";
 import { useIslandFileDrop } from "./island/useIslandFileDrop";
 import { PluginBackgrounds } from "./plugins/PluginBackgrounds";
 
 export function Island() {
 	const ctl = useIslandController(modules);
-	const { mode, primary, secondary, focused } = ctl;
-	const look = useAppearance();
+	const { mode, secondary, focused } = ctl;
+	const saved = useAppearance();
+	const light = statusLight(ctl.entries);
+	const look = light ? { ...saved, rim: [light.color, light.color], animate: false, glow: true } : saved;
 	const windows = look.style === "windows";
 	const v = variantOf(look);
 	useHitRects();
@@ -36,8 +41,19 @@ export function Island() {
 	useIslandFileDrop(ctl);
 
 	const bigSize = ctl.launcher ? launcherSize(ctl.entries.length) : focused?.view.expandedSize;
-	const g = geometry(v, look, mode, bigSize, primary);
 	const big = mode === "expanded" || mode === "peek";
+	const sized = geometry(v, look, mode, bigSize, ctl.shown);
+	// Open, the island is wide enough for every tab (the 40 px are its padding).
+	const shape =
+		mode === "expanded"
+			? { ...sized, width: Math.max(sized.width, barWidthFor(ctl.tabs.length, windows) + 40) }
+			: sized;
+	// The user's size, never larger than the screen.
+	const wanted = useSetting(zoomSetting);
+	const zoom = big
+		? Math.max(0.5, Math.min(wanted, (window.innerWidth - 24) / shape.width, (window.innerHeight - 24) / shape.height))
+		: 1;
+	const g = { ...shape, width: shape.width * zoom, height: shape.height * zoom };
 	const hidden = mode === "hidden";
 	const swallowed = mode === "swallowed";
 	const resting = mode === "compact" || mode === "idle";
@@ -48,6 +64,7 @@ export function Island() {
 	const second = showSecondary ? BUBBLE_GAP + BUBBLE : 0;
 	const drag = useIslandDrag({
 		free: windows,
+		growUp: windows && look.tabsPosition === "bottom",
 		width: g.width,
 		height: g.height,
 		extras: (p) =>
@@ -82,7 +99,9 @@ export function Island() {
 		return () => setIslandControls(null);
 	}, [ctl.expand, ctl.collapse]);
 
-	const content = islandContent(ctl, look, v);
+	// The tab bar sits on the side the island hangs from.
+	const bar = windows ? v : { ...v, tabsAtBottom: edge === "bottom" };
+	const content = islandContent(ctl, look, bar);
 	const rim = windows ? <Rim look={look} /> : null;
 	const bubble = { transition: v.shellSpring, rim, onOpen: ctl.expand, side };
 
@@ -171,6 +190,8 @@ export function Island() {
 								rim={rim}
 								edge={edge}
 								upward={drag.upward}
+								zoom={zoom}
+								light={light}
 							>
 								{content.node}
 							</Surface>

@@ -30,6 +30,8 @@ export const musicModule: IslandModule = {
 			active,
 			priority: music?.playing ? 50 : 10,
 			icon: <Artwork src={music?.thumbnail} size={22} radius={11} />,
+			// The island glows in the cover's color while it plays.
+			accent,
 			compact: music && {
 				left: <MusicCompactLeft music={music} />,
 				right: <MusicCompactRight music={music} accent={accent} showVisualizer={showVisualizer} />,

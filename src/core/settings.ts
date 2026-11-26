@@ -227,6 +227,13 @@ export const monitorSettings = {
 	} satisfies SettingDef,
 };
 
+/** Size of the open island (1 = as designed), set with the − and + buttons. */
+export const ZOOM_STEPS = [0.8, 0.9, 1, 1.15, 1.3, 1.5];
+export const zoomSetting = { key: "island.zoom", label: "island.bigger", default: 1 } as SettingDef<number>;
+/** Read announcements and replies aloud (the Poste announcer reads this). */
+export const voiceSetting = { key: "voice.enabled", label: "island.voiceOn", default: false } as SettingDef;
+/** The last tab looked at: its summary is what the closed island shows. */
+export const LAST_TAB_KEY = "island.lastTab";
 /** Docked look: px from the middle of the edge it hangs on. */
 export const ISLAND_OFFSET_KEY = "island.offset";
 /** Docked look: the edge it hangs on ("top" when never moved). */
@@ -256,7 +263,7 @@ export const appearanceSettings = {
 		key: "appearance.tabsPosition",
 		label: "appearance.tabsPosition.label",
 		description: "appearance.tabsPosition.desc",
-		default: "bottom" as "top" | "bottom",
+		default: "top" as "top" | "bottom",
 	} as SettingDef<"top" | "bottom">,
 	/** A preset id from `core/appearance.ts`, "none" (classic hairline) or "custom". */
 	border: {

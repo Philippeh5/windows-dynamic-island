@@ -53,6 +53,8 @@ function save(p: Placement) {
 interface Options {
 	/** Free placement (Windows Island look) rather than docked to an edge. */
 	free: boolean;
+	/** Free look with its tabs at the bottom: the island grows upward. */
+	growUp: boolean;
 	/** Target shell size (the live, animated one is tracked via `onShellUpdate`). */
 	width: number;
 	height: number;
@@ -71,7 +73,7 @@ interface Options {
  * What's rendered is `place(placement, live size)` plus a gliding offset that
  * springs back to zero, so any change of spot animates from where it was.
  */
-export function useIslandDrag({ free, width, height, extras, canReturn, onDragChange }: Options) {
+export function useIslandDrag({ free, growUp, width, height, extras, canReturn, onDragChange }: Options) {
 	const settings = useSettings();
 	const returnToCenter = readSetting(settings, positionSettings.returnToCenter);
 	const returnDelay = readSetting(settings, positionSettings.returnDelay);
@@ -97,8 +99,9 @@ export function useIslandDrag({ free, width, height, extras, canReturn, onDragCh
 	const glideY = useSpring(offsetY, follow);
 
 	const base = useCallback(
-		(p: Placement) => place(p, { width: liveWidth.get(), height: liveHeight.get() }, stage.get(), extrasRef.current(p)),
-		[liveWidth, liveHeight, stage],
+		(p: Placement) =>
+			place(p, { width: liveWidth.get(), height: liveHeight.get() }, stage.get(), extrasRef.current(p), growUp),
+		[liveWidth, liveHeight, stage, growUp],
 	);
 	const x = useTransform(() => {
 		revision.get();
@@ -267,9 +270,9 @@ export function useIslandDrag({ free, width, height, extras, canReturn, onDragCh
 				const size = { width: liveWidth.get(), height: liveHeight.get() };
 				const left = last.x - grab.x + speed.x * FLING;
 				const top = last.y - grab.y + speed.y * FLING;
-				// The resting pill lands where it is dropped. Dragged while open, it
-				// collapses to where the pointer let go.
-				const anchorY = size.height <= REST_HALF * 3 ? top + size.height / 2 : last.y + speed.y * FLING;
+				// Kept by the edge that holds the tabs, so they stay where they were dropped.
+				let anchorY = growUp ? top + size.height - REST_HALF : top + REST_HALF;
+				if (size.height <= REST_HALF * 3) anchorY = top + size.height / 2;
 				const next = free
 					? freeAt({ x: left + size.width / 2, y: anchorY }, stage.get())
 					: dockAt({ x: last.x + speed.x * FLING, y: last.y + speed.y * FLING }, stage.get());
@@ -285,7 +288,7 @@ export function useIslandDrag({ free, width, height, extras, canReturn, onDragCh
 			window.addEventListener("pointerup", end);
 			window.addEventListener("pointercancel", end);
 		},
-		[free, base, goTo, liveWidth, liveHeight, stage, moving, offsetX, offsetY, x, y],
+		[free, growUp, base, goTo, liveWidth, liveHeight, stage, moving, offsetX, offsetY, x, y],
 	);
 
 	const onClickCapture = useCallback((e: MouseEvent) => {
@@ -304,7 +307,7 @@ export function useIslandDrag({ free, width, height, extras, canReturn, onDragCh
 		[liveWidth, liveHeight],
 	);
 
-	const upward = placement.kind === "free" ? placement.y > 0.5 : placement.edge === "bottom";
+	const upward = placement.kind === "free" ? growUp : placement.edge === "bottom";
 
 	return {
 		placement,

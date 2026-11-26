@@ -5,11 +5,13 @@ import {
 	behaviorSettings,
 	ISLAND_HIDDEN_KEY,
 	inOrder,
+	LAST_TAB_KEY,
 	layoutSettings,
 	moduleEnabled,
 	openTrigger,
 	readSetting,
 	type Values as Settings,
+	setSetting,
 	useSettings,
 } from "./settings";
 import type { IslandMode, IslandModule, ModuleEntry } from "./types";
@@ -51,6 +53,8 @@ export function useIslandController(modules: IslandModule[]) {
 	});
 
 	const { primary, secondary } = useBusiest(entries);
+	const lastTab = typeof settings[LAST_TAB_KEY] === "string" ? (settings[LAST_TAB_KEY] as string) : null;
+	const shown = closedEntry(entries, primary, lastTab);
 	const forceExpanded = forcedId !== null;
 	const mode = islandMode({
 		swallowed: settings[ISLAND_HIDDEN_KEY] === true,
@@ -58,7 +62,7 @@ export function useIslandController(modules: IslandModule[]) {
 		expanded: hover.open,
 		forceExpanded,
 		peeking: peekId !== null,
-		busy: primary !== undefined,
+		busy: shown !== undefined,
 	});
 
 	// A remembered tab whose module was turned off meanwhile doesn't count.
@@ -71,6 +75,12 @@ export function useIslandController(modules: IslandModule[]) {
 			: (openTab ?? primary?.module.id ?? entries.find((e) => !e.view.hidden)?.module.id ?? null));
 	const focused = entries.find((e) => e.module.id === focusedId);
 	const tabs = tabBar(entries, settings, focusedId);
+
+	// Remember the page being looked at.
+	const looking = mode === "expanded" && focusedId && focusedId !== LAUNCHER ? focusedId : null;
+	useEffect(() => {
+		if (looking) setSetting(LAST_TAB_KEY, looking);
+	}, [looking]);
 
 	/** A tab picked by the user: the island may shrink away from the pointer. */
 	const selectTab = useCallback(
@@ -119,7 +129,10 @@ export function useIslandController(modules: IslandModule[]) {
 		launcher: mode === "expanded" && focusedId === LAUNCHER,
 		mode,
 		primary,
-		secondary,
+		// The bubble beside the pill: the busiest module the pill isn't already showing.
+		secondary: [primary, secondary].find((e) => e && e.module.id !== shown?.module.id),
+		/** What the closed island sums up. */
+		shown,
 		focused,
 		tab: focusedId,
 		setTab: selectTab,
@@ -189,6 +202,18 @@ function usePressOutsideInBrowser(onPressOutside: () => void) {
 		window.addEventListener("pointerdown", onDown);
 		return () => window.removeEventListener("pointerdown", onDown);
 	}, []);
+}
+
+/** From this priority up (a reminder, time to drink, an agent waiting), a module takes over the closed island. */
+const URGENT = 55;
+
+/**
+ * The module the closed island sums up: something urgent first, otherwise the
+ * last page looked at, otherwise the busiest one.
+ */
+export function closedEntry(entries: ModuleEntry[], primary: ModuleEntry | undefined, lastTab: string | null) {
+	if (primary && (primary.view.attention || primary.view.priority >= URGENT)) return primary;
+	return entries.find((e) => e.module.id === lastTab) ?? primary;
 }
 
 /** Fullscreen apps hide the island. */

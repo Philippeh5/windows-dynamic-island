@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { Appearance } from "../../core/appearance";
 import { cn } from "../../core/cn";
+import { useT } from "../../core/i18n";
+import type { ModuleEntry } from "../../core/types";
 import { type IslandController, LAUNCHER } from "../../core/useIslandController";
 import { IdleClock } from "../IdleClock";
 import type { Variant } from "./geometry";
@@ -12,16 +14,22 @@ import { Tabs } from "./Tabs";
  * content does, so the swap animates.
  */
 export function islandContent(ctl: IslandController, look: Appearance, v: Variant): { key: string; node: ReactNode } {
-	const { mode, primary, focused } = ctl;
+	const { mode, shown, focused } = ctl;
 	const windows = look.style === "windows";
 
-	if (mode === "compact" && primary?.view.compact) {
+	if (mode === "compact" && shown) {
 		return {
-			key: `compact:${primary.module.id}`,
+			key: `compact:${shown.module.id}`,
 			node: (
 				<div className="flex h-full items-center justify-between pr-3 pl-2">
-					<div className="flex min-w-0 items-center gap-2">{primary.view.compact.left}</div>
-					<div className="flex min-w-0 items-center justify-end gap-2">{primary.view.compact.right}</div>
+					{shown.view.compact ? (
+						<>
+							<div className="flex min-w-0 items-center gap-2">{shown.view.compact.left}</div>
+							<div className="flex min-w-0 items-center justify-end gap-2">{shown.view.compact.right}</div>
+						</>
+					) : (
+						<PageName entry={shown} />
+					)}
 				</div>
 			),
 		};
@@ -60,4 +68,15 @@ export function islandContent(ctl: IslandController, look: Appearance, v: Varian
 	}
 
 	return { key: "idle", node: null };
+}
+
+/** The closed island for a page with nothing to report: its icon and name. */
+function PageName({ entry }: { entry: ModuleEntry }) {
+	const t = useT();
+	return (
+		<div className="flex w-full items-center justify-center gap-2">
+			{entry.view.icon}
+			<span className="truncate text-[13px] font-semibold">{t(entry.module.title)}</span>
+		</div>
+	);
 }

@@ -99,6 +99,10 @@
     pin: "Fixar aberta",
     unpin: "Desafixar",
     restart: "Reiniciar a ilha",
+    smaller: "Menor",
+    bigger: "Maior",
+    voiceOn: "Ler em voz alta",
+    voiceOff: "Parar de ler em voz alta",
   },
 
   // Settings' Behavior page: how the island opens and closes

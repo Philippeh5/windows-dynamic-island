@@ -108,6 +108,10 @@
     pin: "固定展开",
     unpin: "取消固定",
     restart: "重启灵动岛",
+    smaller: "缩小",
+    bigger: "放大",
+    voiceOn: "朗读",
+    voiceOff: "停止朗读",
   },
 
   // Settings' Behavior page: how the island opens and closes

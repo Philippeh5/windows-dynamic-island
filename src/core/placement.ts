@@ -4,7 +4,8 @@
  * - Docked (`dynamic` look): flush against one of the four edges, `along` px
  *   from that edge's middle.
  * - Free (`windows` look): the resting pill's center, as fractions of the
- *   window. In the lower half it grows upward, otherwise downward.
+ *   window. It grows away from its tab bar (downward with the tabs on top), so
+ *   the buttons stay put from one page to the next.
  *
  * Everything is clamped for the island's current size, so opening next to an
  * edge grows inward instead of off-screen.
@@ -49,11 +50,16 @@ const vertical = (size: Size, stage: Size, extra: Extras, wanted: number) =>
 	clamp(wanted, EDGE_MARGIN + extra.top, stage.height - size.height - EDGE_MARGIN - extra.bottom);
 
 /** The island's top-left corner. */
-export function place(p: Placement, size: Size, stage: Size, extra: Extras = NO_EXTRAS): { x: number; y: number } {
+export function place(
+	p: Placement,
+	size: Size,
+	stage: Size,
+	extra: Extras = NO_EXTRAS,
+	upward = false,
+): { x: number; y: number } {
 	if (p.kind === "free") {
 		const cx = p.x * stage.width;
 		const cy = p.y * stage.height;
-		const upward = p.y > 0.5;
 		const top = upward ? cy + REST_HALF - size.height : cy - REST_HALF;
 		return {
 			x: horizontal(size, stage, extra, cx - size.width / 2),
