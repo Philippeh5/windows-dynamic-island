@@ -51,6 +51,12 @@ fn track_foreground(app: &AppHandle) {
 #[cfg(not(windows))]
 fn track_foreground(_: &AppHandle) {}
 
+/// The restart button beside the settings gear: quits and launches again.
+#[tauri::command]
+pub fn restart_island(app: AppHandle) {
+    app.request_restart();
+}
+
 /// Lets the island take keyboard focus (typing a question).
 #[tauri::command]
 pub fn focus_island(app: AppHandle) -> Result<(), String> {

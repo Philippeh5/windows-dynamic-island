@@ -1,5 +1,13 @@
-/** Module tabs shown at once; the rest slide in as the selection nears an edge. */
+/** Module tabs shown at once before the bar is measured; the rest slide in as the selection nears an edge. */
 export const MAX_VISIBLE_TABS = 6;
+/** A closed tab with its gap, and everything else on the bar (open tab's name, buttons). */
+const TAB = 34;
+const RESERVED = 250;
+
+/** As many tabs as the bar has room for, never fewer than the default. */
+export function visibleTabs(barWidth: number): number {
+	return Math.max(MAX_VISIBLE_TABS, Math.floor((barWidth - RESERVED) / TAB));
+}
 /** Tabs kept visible past the selected one, on each side, while more are hidden. */
 const MARGIN = 2;
 

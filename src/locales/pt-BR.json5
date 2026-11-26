@@ -98,6 +98,7 @@
     settings: "Configurações",
     pin: "Fixar aberta",
     unpin: "Desafixar",
+    restart: "Reiniciar a ilha",
   },
 
   // Settings' Behavior page: how the island opens and closes

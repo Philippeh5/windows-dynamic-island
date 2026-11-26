@@ -124,6 +124,7 @@ pub fn run() {
             updater::check_update,
             updater::install_update,
             i18n::set_locale,
+            window::restart_island,
             pip::open_pip,
             pip::close_pip,
             pip::is_pip_open,

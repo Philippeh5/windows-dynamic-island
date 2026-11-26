@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { tabWindow } from "./tabWindow";
+import { tabWindow, visibleTabs } from "./tabWindow";
 
 describe("tabWindow", () => {
 	test("few tabs never scroll", () => {
@@ -40,5 +40,17 @@ describe("tabWindow", () => {
 
 	test("a module removed while scrolled clamps the window", () => {
 		expect(tabWindow(4, 7, 6, 6)).toBe(1);
+	});
+});
+
+describe("visibleTabs", () => {
+	test("a wide island shows every tab it can", () => {
+		expect(visibleTabs(520)).toBe(7);
+		expect(visibleTabs(720)).toBe(13);
+	});
+
+	test("never fewer than the default", () => {
+		expect(visibleTabs(0)).toBe(6);
+		expect(visibleTabs(300)).toBe(6);
 	});
 });

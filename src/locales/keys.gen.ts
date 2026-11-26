@@ -58,6 +58,7 @@ export type MessageKey =
 	| "island.settings"
 	| "island.pin"
 	| "island.unpin"
+	| "island.restart"
 	| "behavior.title"
 	| "behavior.openOn.label"
 	| "behavior.openOn.desc"

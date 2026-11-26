@@ -1,4 +1,4 @@
-import { LayoutGridIcon, PinIcon, SettingsIcon } from "lucide-react";
+import { LayoutGridIcon, PinIcon, RotateCwIcon, SettingsIcon } from "lucide-react";
 import { motion, type Transition } from "motion/react";
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { tv } from "tailwind-variants";
@@ -6,7 +6,7 @@ import { command } from "../../core/bridge";
 import { useT } from "../../core/i18n";
 import type { ModuleEntry } from "../../core/types";
 import { LAUNCHER } from "../../core/useIslandController";
-import { MAX_VISIBLE_TABS, tabWindow } from "./tabWindow";
+import { MAX_VISIBLE_TABS, tabWindow, visibleTabs } from "./tabWindow";
 
 /** How much of the next tab shows, cut off, past an edge that hides more tabs. */
 const PEEK = 14;
@@ -91,12 +91,25 @@ export function Tabs({
 	const s = tabs({ iconsOnly, bottom });
 	const pill = <motion.span layoutId="tab-pill" className={s.pill()} transition={transition} />;
 
+	// How many tabs fit, from the bar's own width.
+	const barRef = useRef<HTMLDivElement>(null);
+	const [size, setSize] = useState(MAX_VISIBLE_TABS);
+	useLayoutEffect(() => {
+		const bar = barRef.current;
+		if (!bar) return;
+		const check = () => setSize(visibleTabs(bar.clientWidth));
+		check();
+		const observer = new ResizeObserver(check);
+		observer.observe(bar);
+		return () => observer.disconnect();
+	}, []);
+
 	// Too many modules: show a window of them that slides along with the selection.
 	const selectedIndex = entries.findIndex((e) => e.module.id === current);
-	const [win, setWin] = useState(() => ({ start: tabWindow(0, entries.length, selectedIndex), current }));
-	const start = tabWindow(win.start, entries.length, win.current === current ? -1 : selectedIndex);
+	const [win, setWin] = useState(() => ({ start: tabWindow(0, entries.length, selectedIndex, size), current }));
+	const start = tabWindow(win.start, entries.length, win.current === current ? -1 : selectedIndex, size);
 	if (start !== win.start || win.current !== current) setWin({ start, current });
-	const end = Math.min(start + MAX_VISIBLE_TABS, entries.length);
+	const end = Math.min(start + size, entries.length);
 	const hiddenLeft = start > 0;
 	const hiddenRight = end < entries.length;
 
@@ -128,7 +141,7 @@ export function Tabs({
 	}, [target]);
 
 	return (
-		<div className={s.base()}>
+		<div ref={barRef} className={s.base()}>
 			<div
 				ref={clipRef}
 				className={s.clip()}
@@ -182,6 +195,20 @@ export function Tabs({
 					{extra}
 				</div>
 			)}
+			<motion.button
+				className={s.gear()}
+				title={t("island.restart")}
+				aria-label={t("island.restart")}
+				whileHover={{ rotate: 90 }}
+				whileTap={{ scale: 0.85 }}
+				transition={{ type: "spring", stiffness: 300, damping: 15 }}
+				onClick={(e) => {
+					e.stopPropagation();
+					command("restart_island");
+				}}
+			>
+				<RotateCwIcon size={15} />
+			</motion.button>
 			<motion.button
 				className={s.gear()}
 				title={t("island.settings")}

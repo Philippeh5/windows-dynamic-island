@@ -111,6 +111,7 @@
     settings: "Settings",
     pin: "Pin open",
     unpin: "Unpin",
+    restart: "Restart the island",
   },
 
   // Settings' Behavior page: how the island opens and closes
