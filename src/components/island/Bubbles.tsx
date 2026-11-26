@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, type Transition } from "motion/react";
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
+import { cn } from "../../core/cn";
 import type { ModuleEntry } from "../../core/types";
 import { GlassProbes } from "./GlassProbes";
 
@@ -9,6 +10,8 @@ interface BubbleProps {
 	/** The rim drawn around each bubble (Windows Island style). */
 	rim: ReactNode;
 	onOpen: (moduleId: string) => void;
+	/** On a side edge, bubbles stack above and below the island instead. */
+	side?: "left" | "right";
 }
 
 /** Modules with an `ambient` glyph, as bubbles left of the resting island. */
@@ -19,7 +22,15 @@ export function AmbientBubbles({
 	...bubble
 }: BubbleProps & { entries: ModuleEntry[]; visible: boolean; shrunk: boolean }) {
 	return (
-		<div className="pointer-events-none absolute top-0 right-[calc(100%+10px)] flex flex-row-reverse gap-2">
+		<div
+			className={cn(
+				"pointer-events-none absolute flex gap-2",
+				!bubble.side && "top-0 right-[calc(100%+10px)] flex-row-reverse",
+				bubble.side && "bottom-[calc(100%+10px)] flex-col-reverse",
+				bubble.side === "left" && "left-1.5",
+				bubble.side === "right" && "right-1.5",
+			)}
+		>
 			<AnimatePresence>
 				{visible &&
 					entries
@@ -50,7 +61,11 @@ export function SecondaryBubble({ entry, ...bubble }: BubbleProps & { entry: Mod
 const bubble = tv({
 	base: "absolute top-0 left-[calc(100%+10px)] grid size-9.5 place-items-center rounded-full bg-island shadow-[0_10px_24px_-12px_rgba(0,0,0,0.7)]",
 	variants: {
-		ambient: { true: "pointer-events-auto relative left-auto flex-none origin-top" },
+		side: {
+			left: "top-[calc(100%+10px)] left-1.5",
+			right: "top-[calc(100%+10px)] right-1.5 left-auto",
+		},
+		ambient: { true: "pointer-events-auto relative top-auto right-auto left-auto flex-none origin-top" },
 	},
 });
 
@@ -63,6 +78,7 @@ function Bubble({
 	transition,
 	rim,
 	onOpen,
+	side,
 	children,
 }: BubbleProps & {
 	id: string;
@@ -76,7 +92,7 @@ function Bubble({
 }) {
 	return (
 		<motion.button
-			className={bubble({ ambient })}
+			className={bubble({ side, ambient })}
 			data-hit
 			data-glass
 			layout={layout}

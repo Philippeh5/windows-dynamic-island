@@ -57,7 +57,7 @@
     },
     returnToCenter: {
       label: "返回屏幕居中",
-      desc: "可沿屏幕顶部左右拖动灵动岛。关闭后，灵动岛将停留在拖放位置。",
+      desc: "可将灵动岛拖到任意位置。关闭后，它会停在松手处。",
     },
     returnDelay: {
       label: "返回延迟",
@@ -496,6 +496,15 @@
       windowsDesc: "悬浮胶囊形态，静止时显示时钟并带彩色光边，模块切换图标位置可调整。",
     },
     windowsOnly: "仅在 Windows 灵动岛样式下可用。",
+    edge: {
+      label: "屏幕边缘",
+      desc: "灵动岛停靠的位置，也可以直接拖到任意边缘。",
+      free: "Windows Island 样式可放在任意位置。",
+      top: "顶部",
+      bottom: "底部",
+      left: "左侧",
+      right: "右侧",
+    },
     tabsPosition: {
       label: "模块切换图标位置",
       desc: "选择展开的灵动岛中模块图标的显示位置。",

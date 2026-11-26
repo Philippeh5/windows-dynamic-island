@@ -13,10 +13,13 @@ import {
 } from "../../core/appearance";
 import { cn } from "../../core/cn";
 import { useT } from "../../core/i18n";
+import { EDGES, isEdge } from "../../core/placement";
 import {
 	appearanceSettings,
 	GLASS_LEVELS,
+	ISLAND_EDGE_KEY,
 	ISLAND_HIDDEN_KEY,
+	ISLAND_OFFSET_KEY,
 	type IslandStyle,
 	readSetting,
 	setSetting,
@@ -152,6 +155,17 @@ export function AppearancePage({ values }: { values: Record<string, unknown> }) 
 						/>
 					</Row>
 				)}
+				<Row label={t("appearance.edge.label")} desc={windows ? t("appearance.edge.free") : t("appearance.edge.desc")}>
+					<Segmented
+						options={EDGES.map((edge) => ({ value: edge, label: t(`appearance.edge.${edge}`) }))}
+						value={isEdge(values[ISLAND_EDGE_KEY]) ? values[ISLAND_EDGE_KEY] : "top"}
+						disabled={windows}
+						onChange={(edge) => {
+							setSetting(ISLAND_OFFSET_KEY, 0);
+							setSetting(ISLAND_EDGE_KEY, edge);
+						}}
+					/>
+				</Row>
 				<ToggleRow def={appearanceSettings.idleClock} value={readSetting(values, appearanceSettings.idleClock)} />
 				<Row
 					label={t("appearance.tabsPosition.label")}

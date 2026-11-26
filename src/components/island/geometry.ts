@@ -1,5 +1,6 @@
 import type { Transition } from "motion/react";
 import type { Appearance } from "../../core/appearance";
+import type { Edge } from "../../core/placement";
 import type { IslandMode, ModuleEntry } from "../../core/types";
 
 export interface Geo {
@@ -15,8 +16,6 @@ export interface Variant {
 	compact: Geo;
 	expanded: Geo;
 	tabBar: number;
-	/** Gap between the top of the screen and the island. */
-	top: number;
 	tabsAtBottom: boolean;
 	shellSpring: Transition;
 	expandSpring: Transition;
@@ -28,7 +27,6 @@ const DYNAMIC: Variant = {
 	compact: { width: 265, height: 38, radius: 19, ear: 10 },
 	expanded: { width: 560, height: 190, radius: 32, ear: 14 },
 	tabBar: 46,
-	top: 0,
 	tabsAtBottom: false,
 	shellSpring: { type: "spring", stiffness: 420, damping: 34, mass: 0.9 },
 	expandSpring: { type: "spring", stiffness: 330, damping: 27, mass: 0.9 },
@@ -40,7 +38,6 @@ const WINDOWS: Variant = {
 	compact: { width: 265, height: 38, radius: 19, ear: 0 },
 	expanded: { width: 560, height: 190, radius: 34, ear: 0 },
 	tabBar: 44,
-	top: 8,
 	tabsAtBottom: true,
 	shellSpring: { type: "spring", stiffness: 380, damping: 29, mass: 0.9 },
 	expandSpring: { type: "spring", stiffness: 300, damping: 20, mass: 0.9 },
@@ -49,9 +46,8 @@ const WINDOWS: Variant = {
 const WINDOWS_BARE_IDLE: Geo = { width: 110, height: 30, radius: 15, ear: 0 };
 
 /**
- * Tallest the island may grow (px). The window is `STRIP_HEIGHT` (640, see
- * `window.rs`) tall; the rest is room for the top gap, the shadow and the
- * spring's overshoot, so the bottom corners never get cut off.
+ * Tallest the island may grow (px), leaving room on small screens for the
+ * shadow and the spring's overshoot.
  */
 export const MAX_HEIGHT = 560;
 
@@ -93,13 +89,18 @@ export function ambientWidth(count: number) {
 	return count ? BUBBLE_GAP + count * BUBBLE + (count - 1) * AMBIENT_GAP : 0;
 }
 
-/** CSS corner radii: the notch-like look hangs from the top, so only its bottom is round. */
-export function cornerRadius(g: Geo, windows: boolean) {
-	const top = windows ? g.radius : 0;
+/**
+ * CSS corner radii: the notch-like look is square against the top or bottom edge
+ * it hangs on. Free, or on a side, it is round all over (the frosted glass only
+ * knows a top and a bottom radius).
+ */
+export function cornerRadius(g: Geo, windows: boolean, edge: Edge = "top") {
+	const top = !windows && edge === "top" ? 0 : g.radius;
+	const bottom = !windows && edge === "bottom" ? 0 : g.radius;
 	return {
 		borderTopLeftRadius: top,
 		borderTopRightRadius: top,
-		borderBottomLeftRadius: g.radius,
-		borderBottomRightRadius: g.radius,
+		borderBottomLeftRadius: bottom,
+		borderBottomRightRadius: bottom,
 	};
 }

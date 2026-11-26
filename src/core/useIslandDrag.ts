@@ -1,139 +1,195 @@
 import { useMotionValue, useMotionValueEvent, useSpring, useTransform, useVelocity } from "motion/react";
 import { type MouseEvent, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { command, useTauriEvent } from "./bridge";
-import { ISLAND_OFFSET_KEY, positionSettings, readSetting, setSetting, useSettings } from "./settings";
+import { defaultFree, dockAt, type Extras, freeAt, isEdge, type Placement, place, REST_HALF } from "./placement";
+import {
+	ISLAND_EDGE_KEY,
+	ISLAND_FREE_KEY,
+	ISLAND_OFFSET_KEY,
+	positionSettings,
+	readSetting,
+	setSetting,
+	useSettings,
+	type Values,
+} from "./settings";
 
 /** Pixels the pointer must travel before a press becomes a drag (not a click). */
 const DRAG_THRESHOLD = 5;
-/** Gap kept between the island (plus its bubbles) and the screen edges. */
-const EDGE_MARGIN = 12;
-/** How much of the overshoot past an edge shows while dragging. */
-const RUBBER = 0.22;
-/** Releases this close to the middle snap back to it. */
-const CENTER_SNAP = 28;
 /** Seconds of release velocity added to where the island lands. */
 const FLING = 0.1;
 
-/** Island position along the top edge: a bit of lag behind the pointer, bouncy on return. */
+/** The island's glide: a bit of lag behind the pointer, bouncy on arrival. */
 const follow = { stiffness: 480, damping: 30, mass: 0.85 };
 /** Jelly settle of the squash & stretch. */
 const wobble = { stiffness: 520, damping: 16, mass: 0.6 };
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
-const rubber = (v: number, min: number, max: number) =>
-	v > max ? max + (v - max) * RUBBER : v < min ? min + (v - min) * RUBBER : v;
+const stageSize = () =>
+	typeof window === "undefined" ? { width: 0, height: 0 } : { width: window.innerWidth, height: window.innerHeight };
+
+/** The saved spot: an edge for the docked look, anywhere for the free one. */
+function storedPlacement(settings: Values, free: boolean): Placement {
+	if (free) {
+		const spot = settings[ISLAND_FREE_KEY] as { x?: unknown; y?: unknown } | undefined;
+		return typeof spot?.x === "number" && typeof spot?.y === "number"
+			? { kind: "free", x: spot.x, y: spot.y }
+			: defaultFree(stageSize());
+	}
+	const edge = settings[ISLAND_EDGE_KEY];
+	return { kind: "dock", edge: isEdge(edge) ? edge : "top", along: Number(settings[ISLAND_OFFSET_KEY]) || 0 };
+}
+
+const home = (free: boolean): Placement => (free ? defaultFree(stageSize()) : { kind: "dock", edge: "top", along: 0 });
+
+function save(p: Placement) {
+	if (p.kind === "free") {
+		setSetting(ISLAND_FREE_KEY, { x: p.x, y: p.y });
+		return;
+	}
+	setSetting(ISLAND_EDGE_KEY, p.edge);
+	setSetting(ISLAND_OFFSET_KEY, p.along);
+}
 
 interface Options {
-	/** Target shell width (the live, animated width is tracked via `onShellUpdate`). */
+	/** Free placement (Windows Island look) rather than docked to an edge. */
+	free: boolean;
+	/** Target shell size (the live, animated one is tracked via `onShellUpdate`). */
 	width: number;
-	/** Space taken beyond the shell on each side (ears, bubbles). */
-	leftExtra: number;
-	rightExtra: number;
-	/** False while the island is open: it only drifts back to the center once collapsed. */
+	height: number;
+	/** Space taken around the shell (ears, bubbles), for where it currently sits. */
+	extras: (p: Placement) => Extras;
+	/** False while the island is open: it only drifts back home once collapsed. */
 	canReturn: boolean;
 	onDragChange?: (dragging: boolean) => void;
 }
 
 /**
- * Horizontal dragging of the island along the top edge of the screen, with a
- * squash & stretch deformation driven by its speed. Returns motion values for
- * the shell's `style` plus the pointer handlers.
+ * Dragging the island around the screen, with a squash & stretch deformation
+ * driven by its speed. Returns motion values for the island's position and
+ * shell style, the current placement, and the pointer handlers.
  *
- * `x` is the offset from the center the user chose; what's rendered is that
- * offset clamped to the screen for the island's current (animated) width, so
- * expanding next to an edge grows inward instead of off-screen.
+ * What's rendered is `place(placement, live size)` plus a gliding offset that
+ * springs back to zero, so any change of spot animates from where it was.
  */
-export function useIslandDrag({ width, leftExtra, rightExtra, canReturn, onDragChange }: Options) {
+export function useIslandDrag({ free, width, height, extras, canReturn, onDragChange }: Options) {
 	const settings = useSettings();
 	const returnToCenter = readSetting(settings, positionSettings.returnToCenter);
 	const returnDelay = readSetting(settings, positionSettings.returnDelay);
-	const stored = Number(settings[ISLAND_OFFSET_KEY]) || 0;
 
-	const target = useMotionValue(0);
-	const x = useSpring(target, follow);
+	const [placement, setPlacement] = useState<Placement>(() => storedPlacement(settings, free));
+	const current = useRef(placement);
+	current.current = placement;
+	const extrasRef = useRef(extras);
+	extrasRef.current = extras;
+
 	const liveWidth = useMotionValue(width);
-	const stageWidth = useMotionValue(typeof window === "undefined" ? 0 : window.innerWidth);
-	const left = useMotionValue(leftExtra);
-	const right = useMotionValue(rightExtra);
-	left.set(leftExtra);
-	right.set(rightExtra);
-	// 1 while dragging / gliding (deforms and allows rubber-banding), 0 at rest.
-	const moving = useMotionValue(0);
+	const liveHeight = useMotionValue(height);
+	const stage = useMotionValue(stageSize());
+	// Bumped when the placement or the extras change: the position is recomputed.
+	const revision = useMotionValue(0);
+	const signature = JSON.stringify([placement, extras(placement)]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: the signature is what must trigger the recompute
+	useEffect(() => revision.set(revision.get() + 1), [signature, revision]);
 
-	useEffect(() => {
-		const onResize = () => stageWidth.set(window.innerWidth);
-		window.addEventListener("resize", onResize);
-		return () => window.removeEventListener("resize", onResize);
-	}, [stageWidth]);
+	const offsetX = useMotionValue(0);
+	const offsetY = useMotionValue(0);
+	const glideX = useSpring(offsetX, follow);
+	const glideY = useSpring(offsetY, follow);
 
-	const limits = useCallback(
-		(w: number) => {
-			const half = stageWidth.get() / 2 - w / 2 - EDGE_MARGIN;
-			return { min: Math.min(0, -(half - left.get())), max: Math.max(0, half - right.get()) };
-		},
-		[stageWidth, left, right],
+	const base = useCallback(
+		(p: Placement) => place(p, { width: liveWidth.get(), height: liveHeight.get() }, stage.get(), extrasRef.current(p)),
+		[liveWidth, liveHeight, stage],
 	);
-
-	const offset = useTransform(() => {
-		const { min, max } = limits(liveWidth.get());
-		return moving.get() ? rubber(x.get(), min, max) : clamp(x.get(), min, max);
+	const x = useTransform(() => {
+		revision.get();
+		liveHeight.get();
+		return base(current.current).x + glideX.get();
+	});
+	const y = useTransform(() => {
+		revision.get();
+		liveWidth.get();
+		return base(current.current).y + glideY.get();
 	});
 
+	useEffect(() => {
+		const onResize = () => stage.set(stageSize());
+		window.addEventListener("resize", onResize);
+		return () => window.removeEventListener("resize", onResize);
+	}, [stage]);
+
 	// --- squash & stretch ------------------------------------------------------
-	const velocity = useVelocity(offset);
+	// 1 while dragging / gliding, 0 at rest.
+	const moving = useMotionValue(0);
+	const speedX = useVelocity(glideX);
+	const speedY = useVelocity(glideY);
 	const stretch = useSpring(
-		useTransform(() => moving.get() * Math.min(Math.abs(velocity.get()) / 2600, 0.3)),
+		useTransform(() => moving.get() * Math.min(Math.hypot(speedX.get(), speedY.get()) / 5200, 0.16)),
 		wobble,
 	);
-	// Hanging from the top edge, the bottom trails behind the movement.
+	// Hanging from the top edge, the bottom trails behind the movement (mirrored at the bottom).
+	const skewSign =
+		placement.kind === "dock" ? (placement.edge === "top" ? 1 : placement.edge === "bottom" ? -1 : 0) : 1;
 	const skewX = useSpring(
-		useTransform(() => moving.get() * clamp(-velocity.get() / 190, -11, 11)),
+		useTransform(() => skewSign * moving.get() * clamp(-speedX.get() / 190, -11, 11)),
 		wobble,
 	);
 	const scaleX = useTransform(stretch, (s) => 1 + s);
 	const scaleY = useTransform(stretch, (s) => 1 - s * 0.5);
 
-	// Back to rest once the glide settles.
 	const dragging = useRef(false);
-	useMotionValueEvent(x, "change", (v) => {
-		if (!dragging.current && moving.get() && Math.abs(v - target.get()) < 0.5 && Math.abs(x.getVelocity()) < 20) {
-			moving.set(0);
-		}
-	});
+	const settle = () => {
+		if (dragging.current || !moving.get()) return;
+		if (Math.abs(glideX.get()) < 0.5 && Math.abs(glideY.get()) < 0.5) moving.set(0);
+	};
+	useMotionValueEvent(glideX, "change", settle);
+	useMotionValueEvent(glideY, "change", settle);
 
-	const [parked, setParked] = useState(false);
-
-	/** Glide to an offset (animated, deforming). */
-	const glideTo = useCallback(
-		(to: number) => {
-			// Start from what's on screen, which may be clamped narrower than `x`.
-			if (!moving.get()) x.jump(offset.get());
+	/** Switch to a new spot, gliding there from where the island is on screen. */
+	const goTo = useCallback(
+		(next: Placement) => {
+			const shown = { x: x.get(), y: y.get() };
+			current.current = next;
+			setPlacement(next);
+			const to = base(next);
+			glideX.jump(shown.x - to.x);
+			glideY.jump(shown.y - to.y);
+			offsetX.jump(shown.x - to.x);
+			offsetY.jump(shown.y - to.y);
+			revision.set(revision.get() + 1);
 			moving.set(1);
-			target.set(to);
-			setParked(to !== 0);
+			offsetX.set(0);
+			offsetY.set(0);
 		},
-		[moving, x, offset, target],
+		[x, y, base, glideX, glideY, offsetX, offsetY, revision, moving],
 	);
 
 	const recenter = useCallback(() => {
-		glideTo(0);
-		setSetting(ISLAND_OFFSET_KEY, 0);
-	}, [glideTo]);
+		const to = home(free);
+		goTo(to);
+		save(to);
+	}, [free, goTo]);
 	useTauriEvent("island://recenter", recenter);
 
-	// Return to the middle after a while (only once collapsed).
+	// Return home after a while (only once collapsed).
 	const [isDragging, setIsDragging] = useState(false);
+	const away = JSON.stringify(placement) !== JSON.stringify(home(free));
 	useEffect(() => {
-		if (!returnToCenter || !parked || isDragging || !canReturn) return;
+		if (!returnToCenter || !away || isDragging || !canReturn) return;
 		const id = window.setTimeout(recenter, Math.max(0, returnDelay) * 1000);
 		return () => window.clearTimeout(id);
-	}, [returnToCenter, returnDelay, parked, isDragging, canReturn, recenter]);
+	}, [returnToCenter, returnDelay, away, isDragging, canReturn, recenter]);
 
-	// Staying put: restore the saved spot (on launch, or changed by another window).
+	// Follow the saved spot: on launch, a change of look, or the settings window.
+	const saved = JSON.stringify(storedPlacement(settings, free));
 	useEffect(() => {
-		if (returnToCenter || dragging.current || Math.abs(stored - target.get()) < 0.5) return;
-		glideTo(stored);
-	}, [stored, returnToCenter, glideTo, target]);
+		const next = JSON.parse(saved) as Placement;
+		const now = current.current;
+		// With "return to center" on, only a change of kind or edge moves the island.
+		const sameSpot =
+			now.kind === next.kind && (now.kind === "free" || (next.kind === "dock" && now.edge === next.edge));
+		if (dragging.current || (returnToCenter && sameSpot) || JSON.stringify(now) === saved) return;
+		goTo(next);
+	}, [saved, returnToCenter, goTo]);
 
 	// --- pointer -----------------------------------------------------------------
 	const suppressClick = useRef(false);
@@ -147,12 +203,12 @@ export function useIslandDrag({ width, leftExtra, rightExtra, canReturn, onDragC
 
 			const el = e.currentTarget;
 			const pointerId = e.pointerId;
-			const startX = e.clientX;
-			let origin = 0;
+			const start = { x: e.clientX, y: e.clientY };
+			let grab = { x: 0, y: 0 };
 			let active = false;
-			let lastX = startX;
+			let last = { ...start };
 			let lastT = performance.now();
-			let speed = 0;
+			const speed = { x: 0, y: 0 };
 
 			const move = (ev: globalThis.PointerEvent) => {
 				if (ev.pointerId !== pointerId) return;
@@ -162,14 +218,13 @@ export function useIslandDrag({ width, leftExtra, rightExtra, canReturn, onDragC
 					end(ev);
 					return;
 				}
-				const dx = ev.clientX - startX;
 				if (!active) {
-					if (Math.abs(dx) < DRAG_THRESHOLD) return;
+					if (Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < DRAG_THRESHOLD) return;
 					active = true;
 					dragging.current = true;
-					if (!moving.get()) x.jump(offset.get());
 					moving.set(1);
-					origin = offset.get() - dx;
+					// Where on the island the pointer holds it.
+					grab = { x: start.x - x.get(), y: start.y - y.get() };
 					try {
 						el.setPointerCapture(pointerId);
 					} catch {
@@ -181,11 +236,13 @@ export function useIslandDrag({ width, leftExtra, rightExtra, canReturn, onDragC
 				}
 				const now = performance.now();
 				const dt = Math.max(1, now - lastT);
-				speed = speed * 0.6 + ((ev.clientX - lastX) / dt) * 1000 * 0.4;
-				lastX = ev.clientX;
+				speed.x = speed.x * 0.6 + ((ev.clientX - last.x) / dt) * 1000 * 0.4;
+				speed.y = speed.y * 0.6 + ((ev.clientY - last.y) / dt) * 1000 * 0.4;
+				last = { x: ev.clientX, y: ev.clientY };
 				lastT = now;
-				const { min, max } = limits(liveWidth.get());
-				target.set(rubber(origin + dx, min, max));
+				const at = base(current.current);
+				offsetX.set(ev.clientX - grab.x - at.x);
+				offsetY.set(ev.clientY - grab.y - at.y);
 			};
 
 			const end = (ev: globalThis.PointerEvent) => {
@@ -205,14 +262,19 @@ export function useIslandDrag({ width, leftExtra, rightExtra, canReturn, onDragC
 					/* already released */
 				}
 				// A pause before letting go cancels the fling.
-				if (performance.now() - lastT > 80) speed = 0;
+				if (performance.now() - lastT > 80) speed.x = speed.y = 0;
 
-				const { min, max } = limits(liveWidth.get());
-				let to = clamp(origin + (lastX - startX) + speed * FLING, min, max);
-				if (Math.abs(to) < CENTER_SNAP) to = 0;
-				target.set(to);
-				setParked(to !== 0);
-				setSetting(ISLAND_OFFSET_KEY, Math.round(to));
+				const size = { width: liveWidth.get(), height: liveHeight.get() };
+				const left = last.x - grab.x + speed.x * FLING;
+				const top = last.y - grab.y + speed.y * FLING;
+				// The resting pill lands where it is dropped. Dragged while open, it
+				// collapses to where the pointer let go.
+				const anchorY = size.height <= REST_HALF * 3 ? top + size.height / 2 : last.y + speed.y * FLING;
+				const next = free
+					? freeAt({ x: left + size.width / 2, y: anchorY }, stage.get())
+					: dockAt({ x: last.x + speed.x * FLING, y: last.y + speed.y * FLING }, stage.get());
+				goTo(next);
+				save(next);
 
 				// The click that follows pointerup must not expand / press buttons.
 				suppressClick.current = true;
@@ -223,7 +285,7 @@ export function useIslandDrag({ width, leftExtra, rightExtra, canReturn, onDragC
 			window.addEventListener("pointerup", end);
 			window.addEventListener("pointercancel", end);
 		},
-		[limits, liveWidth, moving, offset, target, x],
+		[free, base, goTo, liveWidth, liveHeight, stage, moving, offsetX, offsetY, x, y],
 	);
 
 	const onClickCapture = useCallback((e: MouseEvent) => {
@@ -233,16 +295,23 @@ export function useIslandDrag({ width, leftExtra, rightExtra, canReturn, onDragC
 		e.preventDefault();
 	}, []);
 
-	/** Pass to the shell's `onUpdate` so clamping follows the animated width. */
+	/** Pass to the shell's `onUpdate` so clamping follows the animated size. */
 	const onShellUpdate = useCallback(
 		(latest: Record<string, unknown>) => {
 			if (typeof latest.width === "number") liveWidth.set(latest.width);
+			if (typeof latest.height === "number") liveHeight.set(latest.height);
 		},
-		[liveWidth],
+		[liveWidth, liveHeight],
 	);
 
+	const upward = placement.kind === "free" ? placement.y > 0.5 : placement.edge === "bottom";
+
 	return {
-		style: { x: offset, scaleX, scaleY, skewX, transformOrigin: "50% 0" },
+		placement,
+		/** Grows toward the top (bottom edge, or low on the screen). */
+		upward,
+		position: { x, y },
+		style: { scaleX, scaleY, skewX, transformOrigin: upward ? "50% 100%" : "50% 0" },
 		dragging: isDragging,
 		onPointerDown,
 		onClickCapture,

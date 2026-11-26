@@ -52,7 +52,7 @@
     },
     returnToCenter: {
       label: "Voltar ao centro",
-      desc: "Arraste a ilha para a esquerda ou direita no topo. Desligado: ela fica onde você soltar.",
+      desc: "Arraste a ilha para qualquer lugar. Desligado, ela fica onde você soltar.",
     },
     returnDelay: {
       label: "Voltar depois de",
@@ -465,6 +465,15 @@
       windowsDesc: "Uma pílula flutuante com relógio em repouso, borda colorida e posição dos módulos configurável.",
     },
     windowsOnly: "Disponível no estilo Windows Island.",
+    edge: {
+      label: "Borda da tela",
+      desc: "Onde a ilha fica presa. Também dá para arrastá-la até qualquer borda.",
+      free: "A Windows Island fica onde você soltar.",
+      top: "Cima",
+      bottom: "Baixo",
+      left: "Esquerda",
+      right: "Direita",
+    },
     tabsPosition: {
       label: "Posição dos ícones de módulos",
       desc: "Escolha onde os ícones aparecem na ilha expandida.",

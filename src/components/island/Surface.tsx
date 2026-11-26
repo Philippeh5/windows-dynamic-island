@@ -2,6 +2,7 @@ import { AnimatePresence, motion, type Transition } from "motion/react";
 import type { ReactNode } from "react";
 import type { Appearance } from "../../core/appearance";
 import { cn } from "../../core/cn";
+import type { Edge } from "../../core/placement";
 import { GlassProbes } from "./GlassProbes";
 import { cornerRadius, type Geo } from "./geometry";
 import { glowStyle } from "./Rim";
@@ -14,6 +15,8 @@ export function Surface({
 	transition,
 	contentKey,
 	rim,
+	edge,
+	upward,
 	children,
 }: {
 	g: Geo;
@@ -22,6 +25,10 @@ export function Surface({
 	transition: Transition;
 	contentKey: string;
 	rim: ReactNode;
+	/** The edge a docked island hangs on. */
+	edge: Edge;
+	/** The island grows toward the top: its content stays put at the bottom. */
+	upward: boolean;
 	children: ReactNode;
 }) {
 	const windows = look.style === "windows";
@@ -34,13 +41,13 @@ export function Surface({
 			)}
 			style={windows ? glowStyle(look) : undefined}
 			initial={false}
-			animate={cornerRadius(g, windows)}
+			animate={cornerRadius(g, windows, edge)}
 			transition={transition}
 		>
 			<AnimatePresence mode="popLayout" initial={false}>
 				<motion.div
 					key={contentKey}
-					className="absolute top-0 left-1/2 origin-top -translate-x-1/2"
+					className={cn("absolute left-1/2 -translate-x-1/2", upward ? "bottom-0 origin-bottom" : "top-0 origin-top")}
 					style={{ width: g.width, height: g.height }}
 					initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
 					animate={{

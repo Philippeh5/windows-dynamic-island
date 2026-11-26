@@ -1,0 +1,55 @@
+import { describe, expect, test } from "bun:test";
+import { defaultFree, dockAt, EDGE_MARGIN, freeAt, place } from "./placement";
+
+const stage = { width: 1920, height: 1040 };
+const pill = { width: 265, height: 38 };
+const open = { width: 720, height: 466 };
+
+describe("docked", () => {
+	test("each edge keeps the island flush against it", () => {
+		expect(place({ kind: "dock", edge: "top", along: 0 }, pill, stage)).toEqual({ x: 827.5, y: 0 });
+		expect(place({ kind: "dock", edge: "bottom", along: 0 }, open, stage).y).toBe(1040 - 466);
+		expect(place({ kind: "dock", edge: "left", along: 0 }, pill, stage)).toEqual({ x: 0, y: 501 });
+		expect(place({ kind: "dock", edge: "right", along: 0 }, open, stage).x).toBe(1920 - 720);
+	});
+
+	test("opening near a corner grows inward", () => {
+		const corner = place({ kind: "dock", edge: "bottom", along: 900 }, open, stage);
+		expect(corner.x).toBe(1920 - 720 - EDGE_MARGIN);
+		const side = place({ kind: "dock", edge: "left", along: -900 }, open, stage);
+		expect(side.y).toBe(EDGE_MARGIN);
+	});
+
+	test("a drop picks the closest edge", () => {
+		expect(dockAt({ x: 960, y: 30 }, stage)).toEqual({ kind: "dock", edge: "top", along: 0 });
+		expect(dockAt({ x: 300, y: 1000 }, stage)).toEqual({ kind: "dock", edge: "bottom", along: -660 });
+		expect(dockAt({ x: 20, y: 200 }, stage)).toEqual({ kind: "dock", edge: "left", along: -320 });
+		expect(dockAt({ x: 1900, y: 525 }, stage)).toEqual({ kind: "dock", edge: "right", along: 0 });
+	});
+});
+
+describe("free", () => {
+	test("stays where it was dropped", () => {
+		const p = freeAt({ x: 700, y: 400 }, stage);
+		const at = place(p, pill, stage);
+		expect(Math.round(at.x + pill.width / 2)).toBe(700);
+		expect(Math.round(at.y + pill.height / 2)).toBe(400);
+	});
+
+	test("grows downward in the upper half and upward in the lower half", () => {
+		const high = freeAt({ x: 960, y: 200 }, stage);
+		expect(Math.round(place(high, open, stage).y)).toBe(181);
+		const low = freeAt({ x: 960, y: 900 }, stage);
+		expect(Math.round(place(low, open, stage).y + open.height)).toBe(919);
+	});
+
+	test("never leaves the screen", () => {
+		const at = place(freeAt({ x: 5000, y: -50 }, stage), open, stage);
+		expect(at.x).toBe(1920 - 720 - EDGE_MARGIN);
+		expect(at.y).toBe(0);
+	});
+
+	test("the default is the old spot at the top", () => {
+		expect(Math.round(place(defaultFree(stage), pill, stage).y)).toBe(8);
+	});
+});

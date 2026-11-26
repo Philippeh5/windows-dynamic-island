@@ -13,7 +13,7 @@ use serde::Serialize;
 use serde_json::Value;
 use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, PhysicalSize, WebviewWindow};
 
-use crate::window::{ISLAND_LABEL, STRIP_HEIGHT};
+use crate::window::ISLAND_LABEL;
 
 /// `"primary"` or the id of a monitor from [`list_monitors`].
 pub const MONITOR_KEY: &str = "island.monitor";
@@ -124,13 +124,16 @@ fn target(app: &AppHandle, win: &WebviewWindow) -> Option<Monitor> {
     Some(screens.swap_remove(preferred).monitor)
 }
 
-/// Window rect (physical px) that stretches the strip across `monitor`'s top.
+/// Window rect (physical px): `monitor`'s work area, so the island can hang on
+/// any edge (above the taskbar) or float anywhere.
 fn strip_rect(monitor: &Monitor) -> (PhysicalPosition<i32>, PhysicalSize<u32>) {
-    let height = (STRIP_HEIGHT * monitor.scale_factor()).round() as u32;
-    (
-        *monitor.position(),
-        PhysicalSize::new(monitor.size().width, height),
-    )
+    let area = monitor.work_area();
+    // With an auto-hidden taskbar the work area is the whole screen. One pixel
+    // less keeps Windows from treating the overlay as a fullscreen app, and
+    // leaves the edge that brings the taskbar back.
+    let full = area.size.height >= monitor.size().height;
+    let height = area.size.height.saturating_sub(u32::from(full));
+    (area.position, PhysicalSize::new(area.size.width, height))
 }
 
 fn apply(win: &WebviewWindow, monitor: &Monitor) -> tauri::Result<()> {

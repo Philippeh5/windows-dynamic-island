@@ -1,8 +1,8 @@
 //! Island window placement and click-through handling.
 //!
-//! The window is a transparent overlay strip spanning the full width of a
-//! monitor's top edge (which one: see `display.rs`), so the island can be dragged left/right inside
-//! it. Everything outside the island shape must let clicks
+//! The window is a transparent overlay covering a monitor's work area (which
+//! one: see `display.rs`), so the island can sit on any edge or float anywhere
+//! inside it. Everything outside the island shape must let clicks
 //! pass through to the apps below, so the window ignores cursor events by
 //! default and a background thread turns them back on only while the cursor
 //! is inside one of the rects reported by the frontend.
@@ -21,11 +21,6 @@ pub const FULLSCREEN_EVENT: &str = "island://fullscreen";
 pub const PRESS_OUTSIDE_EVENT: &str = "island://press-outside";
 /// Tray "Recenter": the frontend snaps the island back to the middle.
 pub const RECENTER_EVENT: &str = "island://recenter";
-
-/// Strip height in logical pixels: the tallest island (`MAX_HEIGHT` in the
-/// frontend's `geometry.ts`) plus its shadow and spring overshoot. Outside the
-/// hit rects the strip lets clicks through, so the spare room costs nothing.
-pub const STRIP_HEIGHT: f64 = 640.0;
 
 /// The last window in front that wasn't one of ours: what "ask about the
 /// screen" captures, and where focus goes back to after typing in the island.

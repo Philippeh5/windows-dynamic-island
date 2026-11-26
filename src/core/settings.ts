@@ -191,7 +191,7 @@ export function inOrder<T>(items: T[], idOf: (item: T) => string, order: string[
 	return [...items].sort((a, b) => rank(a) - rank(b));
 }
 
-/** Where the island goes after being dragged along the top edge. */
+/** Where the island goes after being dragged. */
 export const positionSettings = {
 	returnToCenter: {
 		key: "island.returnToCenter",
@@ -227,8 +227,12 @@ export const monitorSettings = {
 	} satisfies SettingDef,
 };
 
-/** Last drag offset from the center in CSS px (kept only when not returning). */
+/** Docked look: px from the middle of the edge it hangs on. */
 export const ISLAND_OFFSET_KEY = "island.offset";
+/** Docked look: the edge it hangs on ("top" when never moved). */
+export const ISLAND_EDGE_KEY = "island.edge";
+/** Free look: `{ x, y }`, the resting pill's center as fractions of the work area. */
+export const ISLAND_FREE_KEY = "island.free";
 
 /** Swallowed by the tray's black hole; written by the backend (`tray.rs`). */
 export const ISLAND_HIDDEN_KEY = "island.hidden";
