@@ -784,6 +784,16 @@
   // 日历：由时钟模块展示 Google 账号和 iCal 链接日程
   // (src-tauri/src/providers/calendar)
   calendar: {
+    event: {
+      add: "添加日程",
+      title: "标题",
+      start: "开始",
+      length: "时长",
+      save: "保存",
+      cancel: "取消",
+      delete: "删除",
+      confirm: "确认？",
+    },
     allDay: "全天",
     untitled: "（无标题）",
     // {n}: 未列出的事件数量

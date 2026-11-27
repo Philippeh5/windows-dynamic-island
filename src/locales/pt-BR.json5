@@ -724,6 +724,16 @@
   },
 
   calendar: {
+    event: {
+      add: "Novo evento",
+      title: "Título",
+      start: "Início",
+      length: "Duração",
+      save: "Salvar",
+      cancel: "Cancelar",
+      delete: "Excluir",
+      confirm: "Confirmar?",
+    },
     allDay: "Dia todo",
     untitled: "(Sem título)",
     more: "+{n} eventos",

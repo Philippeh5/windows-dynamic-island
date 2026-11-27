@@ -17,6 +17,7 @@ import { monitor } from "./monitor";
 import { music } from "./music";
 import { notifications } from "./notifications";
 import { pluginsMock } from "./plugins";
+import { poste } from "./poste";
 import { shelf } from "./shelf";
 import { system } from "./system";
 
@@ -36,6 +37,7 @@ export const mocks: Mock[] = [
 	calendarMock,
 	monitor,
 	pluginsMock,
+	poste,
 ];
 
 /** Sent every few frames while the island animates: would drown the log. */

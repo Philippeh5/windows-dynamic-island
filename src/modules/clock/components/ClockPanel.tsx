@@ -2,9 +2,11 @@ import { useMemo, useState, type WheelEvent } from "react";
 import { command } from "../../../core/bridge";
 import { cn } from "../../../core/cn";
 import { useLocale, useT } from "../../../core/i18n";
+import { POSTE_CALENDAR } from "../../../core/posteData";
 import { useNow } from "../../ai-agents/common/format";
 import { DAY_MS, dayDots, eventsOn, sameDay, startOfDay } from "../events";
 import type { CalEvent, CalendarState } from "../types";
+import { EventForm } from "./EventForm";
 
 /** The wheel over the calendar flips months at most this often. */
 const WHEEL_STEP_MS = 220;
@@ -46,7 +48,18 @@ const openLink = (url: string | null) => {
 };
 
 /** Clock, the focused day's events, and the month with a dot per calendar on busy days. */
-export function ClockPanel({ calendar, highlight }: { calendar?: CalendarState; highlight?: string }) {
+export function ClockPanel({
+	calendar,
+	highlight,
+	editable,
+}: {
+	calendar?: CalendarState;
+	highlight?: string;
+	/** The post's calendar can be written to: events can be added, changed and deleted. */
+	editable?: boolean;
+}) {
+	// The event being written: an existing one, a new one (`null`), or none.
+	const [editing, setEditing] = useState<CalEvent | null | undefined>(undefined);
 	const t = useT();
 	const locale = useLocale();
 	const now = useNow(1000);
@@ -106,7 +119,7 @@ export function ClockPanel({ calendar, highlight }: { calendar?: CalendarState; 
 				)}
 				style={{ "--cal-color": colors.get(e.calendar) ?? "#8E8E93" } as React.CSSProperties}
 				title={[e.title, e.location].filter(Boolean).join("\n")}
-				onClick={() => openLink(e.url)}
+				onClick={() => (e.calendar === POSTE_CALENDAR && !e.allDay ? setEditing(e) : openLink(e.url))}
 			>
 				<span
 					className={cn(
@@ -154,7 +167,19 @@ export function ClockPanel({ calendar, highlight }: { calendar?: CalendarState; 
 				<span className="text-[12px] text-text-faint first-letter:uppercase">
 					{selected && !sameDay(selected, today) ? relative : t("clock.week", { n: isoWeek(focus) })}
 				</span>
-				{hasSources && (
+				{editing !== undefined && (
+					<EventForm key={editing?.id ?? "new"} event={editing} day={focus} onDone={() => setEditing(undefined)} />
+				)}
+				{editable && editing === undefined && (
+					<button
+						type="button"
+						className="mt-1 h-5.5 self-start rounded-[11px] bg-white/8 px-2.5 text-[11.5px] font-[650] text-text-dim hover:bg-white/14 hover:text-text"
+						onClick={() => setEditing(null)}
+					>
+						+ {t("calendar.event.add")}
+					</button>
+				)}
+				{hasSources && editing === undefined && (
 					<ul className="mt-1.5 flex min-w-0 list-none flex-col gap-0.5">
 						{shown.map(row)}
 						{dayEvents.length > shown.length && (

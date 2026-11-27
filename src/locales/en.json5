@@ -788,6 +788,16 @@
   // Calendar: Google account and iCal links, shown by the clock module
   // (src-tauri/src/providers/calendar)
   calendar: {
+    event: {
+      add: "Add event",
+      title: "Title",
+      start: "Start",
+      length: "Length",
+      save: "Save",
+      cancel: "Cancel",
+      delete: "Delete",
+      confirm: "Confirm?",
+    },
     allDay: "All day",
     untitled: "(No title)",
     // {n}: number of events not listed

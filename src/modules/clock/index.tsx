@@ -1,4 +1,8 @@
 import { CalendarIcon } from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
+import { Marquee } from "../../components/Marquee";
+import { providerAction, useProvider } from "../../core/bridge";
+import { useLocale, useT } from "../../core/i18n";
 /**
  * Clock — the time, and a month calendar to look up dates, as a tab of the
  * open island. (In the Windows Island style the resting pill also shows the
@@ -9,10 +13,8 @@ import { CalendarIcon } from "lucide-react";
  * focused day lists its events, and the next event takes over the island a
  * few minutes before it starts.
  */
-import { useEffect, useMemo, useRef } from "react";
-import { Marquee } from "../../components/Marquee";
-import { providerAction, useProvider } from "../../core/bridge";
-import { useLocale, useT } from "../../core/i18n";
+import { POSTE_PROVIDER, type PosteState } from "../../core/poste";
+import { REMINDER_MARK, withPosteEvents } from "../../core/posteData";
 import { useSetting } from "../../core/settings";
 import type { IslandModule, ModuleView } from "../../core/types";
 import { useNow } from "../ai-agents/common/format";
@@ -65,7 +67,9 @@ export const clockModule: IslandModule = {
 	settings: Object.values(calendarSettings),
 	SettingsSection: CalendarSettings,
 	useView(): ModuleView {
-		const calendar = useProvider<CalendarState>(CALENDAR_PROVIDER);
+		const own = useProvider<CalendarState>(CALENDAR_PROVIDER);
+		const poste = useProvider<PosteState>(POSTE_PROVIDER);
+		const calendar = useMemo(() => withPosteEvents(own, poste), [own, poste]);
 		const remind = useSetting(calendarSettings.remind);
 		const minutes = useSetting(remindMinutes);
 		const ownReminders = useSetting(eventReminders);
@@ -74,7 +78,8 @@ export const clockModule: IslandModule = {
 			const leads = leadList(minutes);
 			return (e) => (ownReminders && e.reminders?.length ? e.reminders : leads);
 		}, [minutes, ownReminders]);
-		const events = calendar?.events ?? [];
+		// The post announces its own reminders: not twice.
+		const events = (calendar?.events ?? []).filter((e) => !e.title.startsWith(REMINDER_MARK));
 
 		// Tick only while a reminder is close; otherwise a slow clock notices the next one coming.
 		const coarse = useNow(30_000);
@@ -115,7 +120,7 @@ export const clockModule: IslandModule = {
 						),
 						width: 265,
 					},
-			expanded: <ClockPanel calendar={calendar} highlight={due?.id} />,
+			expanded: <ClockPanel calendar={calendar} highlight={due?.id} editable={!!poste?.configured} />,
 			expandedSize: { width: 560, height: calendar?.calendars.length ? HEIGHT_WITH_EVENTS : 214 },
 			// Peeks at each reminder, and again when the event starts.
 			activityKey,
