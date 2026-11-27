@@ -25,7 +25,26 @@ const state = provider<PosteState>(POSTE_PROVIDER, {
 	announces: [],
 	events: [{ id: "ev1", title: "Dentiste", start: inDays(14, 10), end: null }],
 	agendaError: null,
+	taskLists: [
+		{
+			id: "L1",
+			title: "Mes tâches",
+			tasks: [
+				{ id: "t1", title: "Appeler la banque", due: "2026-11-20" },
+				{ id: "t2", title: "Réviser", due: null },
+			],
+		},
+		{ id: "L2", title: "Course", tasks: [{ id: "t3", title: "Pain", due: null }] },
+	],
 });
+
+const drop = (payload: unknown) => {
+	const p = payload as { task: string };
+	state.set((s) => ({
+		...s,
+		taskLists: s.taskLists?.map((l) => ({ ...l, tasks: l.tasks.filter((t) => t.id !== p.task) })),
+	}));
+};
 
 let count = 0;
 export const poste = defineMock({
@@ -49,6 +68,17 @@ export const poste = defineMock({
 	],
 	actions: {
 		[POSTE_PROVIDER]: {
+			addTask: (payload) => {
+				const p = payload as { list: string; title: string; due: string | null };
+				state.set((s) => ({
+					...s,
+					taskLists: s.taskLists?.map((l) =>
+						l.id === p.list ? { ...l, tasks: [...l.tasks, { id: `t${Date.now()}`, title: p.title, due: p.due }] } : l,
+					),
+				}));
+			},
+			completeTask: (payload) => drop(payload),
+			deleteTask: (payload) => drop(payload),
 			saveEvent: (payload) => {
 				const p = payload as { id: string | null; title: string; start: string };
 				const event: PosteEvent = { id: p.id ?? `ev${Date.now()}`, title: p.title, start: p.start, end: null };

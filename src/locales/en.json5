@@ -107,6 +107,20 @@
   },
 
   // Island chrome
+  tasks: {
+    title: "Google Tasks",
+    loading: "Loading…",
+    empty: "Nothing to do",
+    done: "Done",
+    delete: "Delete",
+    confirm: "Confirm?",
+    new: "New task…",
+    due: "Due date",
+    add: "Add",
+    dueCount: "{n} due",
+    openCount: "{n} open",
+  },
+
   island: {
     settings: "Settings",
     pin: "Pin open",

@@ -103,6 +103,20 @@
   },
 
   // 灵动岛主界面
+  tasks: {
+    title: "Google Tasks",
+    loading: "加载中…",
+    empty: "没有待办",
+    done: "完成",
+    delete: "删除",
+    confirm: "确认？",
+    new: "新任务…",
+    due: "截止日期",
+    add: "添加",
+    dueCount: "{n} 项到期",
+    openCount: "{n} 项待办",
+  },
+
   island: {
     settings: "设置",
     pin: "固定展开",

@@ -27,6 +27,19 @@ export interface PosteEvent {
 	status?: string;
 }
 
+export interface PosteTask {
+	id: string;
+	title: string;
+	/** `YYYY-MM-DD`. */
+	due: string | null;
+}
+
+export interface PosteTaskList {
+	id: string;
+	title: string;
+	tasks: PosteTask[];
+}
+
 export interface PosteState {
 	configured: boolean;
 	connected: boolean;
@@ -34,4 +47,7 @@ export interface PosteState {
 	announces: PosteAnnounce[] | null;
 	events: PosteEvent[] | null;
 	agendaError: string | null;
+	/** The user's own to-do lists (Google Tasks). */
+	taskLists?: PosteTaskList[] | null;
+	tasksError?: string | null;
 }

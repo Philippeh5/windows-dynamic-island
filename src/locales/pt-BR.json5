@@ -94,6 +94,20 @@
     settings: "Island for Windows — Configurações",
   },
 
+  tasks: {
+    title: "Google Tarefas",
+    loading: "Carregando…",
+    empty: "Nada a fazer",
+    done: "Concluir",
+    delete: "Excluir",
+    confirm: "Confirmar?",
+    new: "Nova tarefa…",
+    due: "Prazo",
+    add: "Adicionar",
+    dueCount: "{n} para hoje",
+    openCount: "{n} abertas",
+  },
+
   island: {
     settings: "Configurações",
     pin: "Fixar aberta",

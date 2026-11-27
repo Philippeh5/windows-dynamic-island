@@ -35,6 +35,9 @@ struct State {
     announces: Value,
     events: Value,
     agenda_error: Option<String>,
+    /// The user's own to-do lists (Google Tasks).
+    task_lists: Value,
+    tasks_error: Option<String>,
 }
 
 #[derive(Default)]
@@ -132,10 +135,18 @@ fn event_id(value: &Value) -> Result<&str, String> {
             !id.is_empty()
                 && id
                     .chars()
-                    .all(|c| c.is_ascii_alphanumeric() || "_@.-".contains(c))
+                    .all(|c| c.is_ascii_alphanumeric() || "_@.-=".contains(c))
                 && id.chars().any(|c| c != '.')
         })
         .ok_or_else(|| "invalid event id".to_string())
+}
+
+fn task_path(payload: &Value) -> Result<String, String> {
+    Ok(format!(
+        "/v1/gtasks/{}/{}",
+        event_id(&payload["list"])?,
+        event_id(&payload["task"])?
+    ))
 }
 
 impl Provider for PosteProvider {
@@ -175,6 +186,15 @@ impl Provider for PosteProvider {
                             }
                             Err(e) => state.agenda_error = Some(e),
                         }
+                        // The calendar shows up first: the to-do lists take longer to read.
+                        hub.publish(ID, state.clone());
+                        match request(&hub, "GET", "/v1/gtasks", None) {
+                            Ok(data) => {
+                                state.task_lists = data["lists"].clone();
+                                state.tasks_error = None;
+                            }
+                            Err(e) => state.tasks_error = Some(e),
+                        }
                     }
                 }
                 hub.publish(ID, state.clone());
@@ -206,6 +226,18 @@ impl Provider for PosteProvider {
             }
             "deleteEvent" => {
                 let path = format!("/v1/agenda/{}/delete", event_id(&payload["id"])?);
+                request(&hub, "POST", &path, Some(&json!({ "confirm": true })))
+            }
+            "addTask" => {
+                let body = json!({ "list": payload["list"], "title": payload["title"], "due": payload["due"] });
+                request(&hub, "POST", "/v1/gtasks", Some(&body))
+            }
+            "completeTask" => {
+                let path = task_path(&payload)?;
+                request(&hub, "POST", &path, Some(&json!({ "done": true })))
+            }
+            "deleteTask" => {
+                let path = format!("{}/delete", task_path(&payload)?);
                 request(&hub, "POST", &path, Some(&json!({ "confirm": true })))
             }
             _ => Err(format!("poste: unsupported action '{action}'")),
