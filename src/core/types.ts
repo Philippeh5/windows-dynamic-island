@@ -38,8 +38,8 @@ export interface ModuleView {
 	/** Small controls in the tab bar, next to the gear, while this tab is open (e.g. volume). */
 	tabBarExtra?: ReactNode;
 	/**
-	 * Changing this value makes the island briefly auto-expand ("peek") to show
-	 * this module, e.g. a new track started. `undefined` never peeks.
+	 * Changing this value shows this module in the closed island for a few
+	 * seconds, e.g. a new notification. `undefined` never does.
 	 */
 	activityKey?: string;
 	/**

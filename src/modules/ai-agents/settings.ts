@@ -44,3 +44,9 @@ export const claudeSounds = {
 		>,
 	},
 };
+
+/** What the last new session on the post was started with (picked on the page). */
+export const newSessionSettings = {
+	project: { key: "agents.newSession.project", label: "agents.poste.project", default: "" } as SettingDef<string>,
+	tool: { key: "agents.newSession.tool", label: "agents.poste.provider", default: "claude" } as SettingDef<string>,
+};

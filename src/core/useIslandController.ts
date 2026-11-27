@@ -1,5 +1,6 @@
 import { type MouseEvent, useCallback, useEffect, useMemo, useRef, useState, type WheelEvent } from "react";
 import { command, isTauri, useTauriEvent } from "./bridge";
+import { closedEntry } from "./closedEntry";
 import { usePluginEntries, usePluginModules } from "./plugins/modules";
 import {
 	behaviorSettings,
@@ -44,7 +45,7 @@ export function useIslandController(modules: IslandModule[]) {
 	const forcedId = entries.find((e) => e.view.forceExpanded)?.module.id ?? null;
 	const attentionId = forcedId ?? entries.find((e) => e.view.attention)?.module.id ?? null;
 	const tabMemory = useTabMemory(attentionId);
-	const { peekId, peek, endPeek } = usePeek(entries);
+	const { peekId, newsId, peek, endPeek } = usePeek(entries);
 	const hover = useIslandHover({
 		expandOnHover: openTrigger(settings) === "hover",
 		collapseOnLeave: readSetting(settings, behaviorSettings.closeOn) === "leave",
@@ -52,9 +53,9 @@ export function useIslandController(modules: IslandModule[]) {
 		onClose: tabMemory.onIslandClose,
 	});
 
-	const { primary, secondary } = useBusiest(entries);
+	const { primary, busy } = useBusiest(entries);
 	const lastTab = typeof settings[LAST_TAB_KEY] === "string" ? (settings[LAST_TAB_KEY] as string) : null;
-	const shown = closedEntry(entries, primary, lastTab);
+	const shown = closedEntry(entries, primary, lastTab, newsId);
 	const forceExpanded = forcedId !== null;
 	const mode = islandMode({
 		swallowed: settings[ISLAND_HIDDEN_KEY] === true,
@@ -129,8 +130,9 @@ export function useIslandController(modules: IslandModule[]) {
 		launcher: mode === "expanded" && focusedId === LAUNCHER,
 		mode,
 		primary,
-		// The bubble beside the pill: the busiest module the pill isn't already showing.
-		secondary: [primary, secondary].find((e) => e && e.module.id !== shown?.module.id),
+		// The bubble beside the pill: the busiest module the pill isn't already showing (one that waits for the
+		// user has its own ringed bubble).
+		secondary: busy.find((e) => !e.view.alert && e.module.id !== shown?.module.id),
 		/** What the closed island sums up. */
 		shown,
 		focused,
@@ -189,7 +191,7 @@ function useBusiest(entries: ModuleEntry[]) {
 	);
 	// Looked up again so the views are this render's, not the memoized ones.
 	const fresh = (e?: ModuleEntry) => (e ? entries.find((x) => x.module.id === e.module.id) : undefined);
-	return { primary: fresh(active[0]), secondary: fresh(active[1]) };
+	return { primary: fresh(active[0]), busy: active.map(fresh).filter((e) => e !== undefined) };
 }
 
 /** Browser preview: a press on the page but off the island counts as outside. */
@@ -204,18 +206,6 @@ function usePressOutsideInBrowser(onPressOutside: () => void) {
 		window.addEventListener("pointerdown", onDown);
 		return () => window.removeEventListener("pointerdown", onDown);
 	}, []);
-}
-
-/** From this priority up (a reminder, time to drink, an agent waiting), a module takes over the closed island. */
-const URGENT = 55;
-
-/**
- * The module the closed island sums up: something urgent first, otherwise the
- * last page looked at, otherwise the busiest one.
- */
-export function closedEntry(entries: ModuleEntry[], primary: ModuleEntry | undefined, lastTab: string | null) {
-	if (primary && (primary.view.attention || primary.view.priority >= URGENT)) return primary;
-	return entries.find((e) => e.module.id === lastTab) ?? primary;
 }
 
 /** Fullscreen apps hide the island. */

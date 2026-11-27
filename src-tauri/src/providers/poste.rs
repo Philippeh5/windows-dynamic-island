@@ -43,6 +43,8 @@ struct State {
     sessions: Value,
     services: Value,
     projects: Value,
+    /// The agent programs a new session can be started with.
+    providers: Value,
 }
 
 #[derive(Default)]
@@ -203,6 +205,7 @@ impl Provider for PosteProvider {
                             state.sessions = data["sessions"].clone();
                             state.services = data["services"].clone();
                             state.projects = data["projects"].clone();
+                            state.providers = data["providers"].clone();
                         }
                         Err(e) => {
                             log::debug!("poste: {e}");
@@ -334,6 +337,11 @@ impl Provider for PosteProvider {
             "say" => {
                 let body = json!({ "text": payload["text"], "speak": payload["speak"] });
                 request(&hub, "POST", "/v1/hermes", Some(&body))
+            }
+            // A new session: an agent in a terminal of one of the post's projects.
+            "launch" => {
+                let body = json!({ "project": payload["project"], "tool": payload["tool"] });
+                request(&hub, "POST", "/v1/sessions", Some(&body))
             }
             "restart" => {
                 let path = format!("/v1/services/{}/restart", event_id(&payload["id"])?);

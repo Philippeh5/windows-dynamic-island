@@ -179,7 +179,7 @@ export const aiAgentsModule: IslandModule = {
 					)}
 					{poste?.configured && (
 						<div className="flex-none">
-							<PosteSessions sessions={remote} />
+							<PosteSessions poste={poste} />
 						</div>
 					)}
 					<div className="flex-none" style={{ height: usageHeight }}>

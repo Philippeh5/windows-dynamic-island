@@ -316,6 +316,12 @@
   // AI 智能体模块
   agents: {
     poste: {
+      new: "新会话",
+      project: "项目",
+      provider: "代理",
+      launch: "启动",
+      launching: "启动中…",
+      started: "会话已启动",
       back: "上一步",
       next: "下一步",
       showScreen: "显示终端",

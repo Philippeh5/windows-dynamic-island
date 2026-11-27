@@ -94,4 +94,5 @@ export interface PosteState {
 	sessions?: PosteSession[] | null;
 	services?: PosteService[] | null;
 	projects?: { name: string; dir: string; host: string }[] | null;
+	providers?: { id: string; label: string }[] | null;
 }

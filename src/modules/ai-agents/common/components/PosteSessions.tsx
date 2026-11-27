@@ -1,22 +1,42 @@
+import { PlusIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SectionLabel } from "../../../../components/ui/text";
 import { command, providerAction } from "../../../../core/bridge";
 import { cn } from "../../../../core/cn";
 import { useT } from "../../../../core/i18n";
 import { useIsland } from "../../../../core/island";
-import { POSTE_PROVIDER, type PosteSession } from "../../../../core/poste";
+import { POSTE_PROVIDER, type PosteSession, type PosteState } from "../../../../core/poste";
+import { NewSession } from "./NewSession";
 
 const DOT: Record<string, string> = { active: "bg-[#30d158]", waiting: "bg-[#ff9f0a]", error: "bg-[#ff453a]" };
 
 /** The sessions open on the post. Click one to read it and send it a message. */
-export function PosteSessions({ sessions }: { sessions: PosteSession[] }) {
+export function PosteSessions({ poste }: { poste: PosteState }) {
 	const t = useT();
 	const [open, setOpen] = useState<string | null>(null);
+	const [adding, setAdding] = useState(false);
+	const sessions = poste.sessions ?? [];
 	const chosen = sessions.find((s) => s.id === open);
 
 	return (
 		<div className="flex min-w-0 flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-			<SectionLabel>{t("agents.poste.sessions")}</SectionLabel>
+			<div className="flex items-center justify-between">
+				<SectionLabel>{t("agents.poste.sessions")}</SectionLabel>
+				<button
+					type="button"
+					className={cn(
+						"grid size-6 flex-none place-items-center rounded-full bg-white/10 hover:bg-white/18",
+						adding && "rotate-45",
+					)}
+					aria-label={t("agents.poste.new")}
+					title={t("agents.poste.new")}
+					aria-expanded={adding}
+					onClick={() => setAdding(!adding)}
+				>
+					<PlusIcon size={14} />
+				</button>
+			</div>
+			{adding && <NewSession poste={poste} onDone={() => setAdding(false)} />}
 			{sessions.length === 0 && <span className="px-2 text-[12px] text-text-faint">{t("agents.poste.none")}</span>}
 			<ul className="flex list-none flex-col gap-0.5">
 				{sessions.map((s) => (

@@ -320,6 +320,12 @@
   // AI Agents module (agent-agnostic UI)
   agents: {
     poste: {
+      new: "New session",
+      project: "Project",
+      provider: "Agent",
+      launch: "Launch",
+      launching: "Launching…",
+      started: "Session started",
       back: "Back",
       next: "Next",
       showScreen: "Show the terminal",

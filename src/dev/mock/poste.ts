@@ -29,7 +29,14 @@ const state = provider<PosteState>(POSTE_PROVIDER, {
 		{ id: "shop", group: "Shop", name: "frontend", running: true, restartable: true },
 		{ id: "bot", group: "Bots", name: "trader", running: false, restartable: false },
 	],
-	projects: [{ name: "boutique", dir: "/p/boutique", host: "oracle" }],
+	projects: [
+		{ name: "boutique", dir: "/p/boutique", host: "oracle" },
+		{ name: "site", dir: "/p/site", host: "oracle" },
+	],
+	providers: [
+		{ id: "claude", label: "Claude Code" },
+		{ id: "codex", label: "Codex" },
+	],
 	approvals: [],
 	sessions: [
 		{
@@ -188,6 +195,18 @@ export const poste = defineMock({
 			},
 			runFlow: () => null,
 			restart: () => null,
+			launch: (payload) => {
+				const p = payload as { project: string; tool: string };
+				const id = `new${Date.now()}`;
+				const title = `${p.tool} · ${p.project.split("/").pop()}`;
+				state.set((s) => ({
+					...s,
+					sessions: [
+						...(s.sessions ?? []),
+						{ host: "oracle", id, title, group: "idle", status: "idle", terminal: true },
+					],
+				}));
+			},
 			newTask: () => ({ id: "t1" }),
 			saveEvent: (payload) => {
 				const p = payload as { id: string | null; title: string; start: string };

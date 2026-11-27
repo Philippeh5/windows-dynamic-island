@@ -302,6 +302,12 @@
   // Módulo AI Agents
   agents: {
     poste: {
+      new: "Nova sessão",
+      project: "Projeto",
+      provider: "Agente",
+      launch: "Iniciar",
+      launching: "Iniciando…",
+      started: "Sessão iniciada",
       back: "Voltar",
       next: "Próxima",
       showScreen: "Mostrar o terminal",

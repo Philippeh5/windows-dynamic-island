@@ -2,10 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ModuleEntry } from "./types";
 
 const PEEK_DURATION = 3800;
+/** How long news scrolls in the closed island before it goes back to the page looked at. */
+export const NEWS_DURATION = 7000;
 
 /**
- * Briefly shows a module when it reports new activity (its `activityKey`
- * changes), or on demand with `peek`.
+ * News from a module (its `activityKey` changes) takes the closed island for a
+ * moment; `peek` shows a module's page, on demand.
  */
 export function usePeek(entries: ModuleEntry[]) {
 	const [peekId, setPeekId] = useState<string | null>(null);
@@ -17,12 +19,29 @@ export function usePeek(entries: ModuleEntry[]) {
 		timer.current = window.setTimeout(() => setPeekId(null), PEEK_DURATION);
 	}, []);
 
-	const endPeek = useCallback(() => {
-		window.clearTimeout(timer.current);
-		setPeekId(null);
+	const [newsId, setNewsId] = useState<string | null>(null);
+	const newsTimer = useRef<number | undefined>(undefined);
+	const announce = useCallback((moduleId: string) => {
+		setNewsId(moduleId);
+		window.clearTimeout(newsTimer.current);
+		newsTimer.current = window.setTimeout(() => setNewsId(null), NEWS_DURATION);
 	}, []);
 
-	useEffect(() => () => window.clearTimeout(timer.current), []);
+	/** The island was opened or closed on purpose: nothing temporary stays. */
+	const endPeek = useCallback(() => {
+		window.clearTimeout(timer.current);
+		window.clearTimeout(newsTimer.current);
+		setPeekId(null);
+		setNewsId(null);
+	}, []);
+
+	useEffect(
+		() => () => {
+			window.clearTimeout(timer.current);
+			window.clearTimeout(newsTimer.current);
+		},
+		[],
+	);
 
 	const lastKeys = useRef(new Map<string, string | undefined>());
 	const keySignature = entries.map((e) => `${e.module.id}=${e.view.activityKey ?? ""}`).join("|");
@@ -32,9 +51,9 @@ export function usePeek(entries: ModuleEntry[]) {
 			const seen = lastKeys.current.has(module.id);
 			const prev = lastKeys.current.get(module.id);
 			lastKeys.current.set(module.id, view.activityKey);
-			if (seen && view.activityKey && view.activityKey !== prev) peek(module.id);
+			if (seen && view.activityKey && view.activityKey !== prev) announce(module.id);
 		}
 	}, [keySignature]);
 
-	return { peekId, peek, endPeek };
+	return { peekId, newsId, peek, endPeek };
 }
