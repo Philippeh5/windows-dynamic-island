@@ -69,6 +69,15 @@ export interface PosteSession {
 	detail?: string;
 }
 
+export interface PosteService {
+	id: string;
+	group: string;
+	name: string;
+	running: boolean;
+	warn?: string | null;
+	restartable: boolean;
+}
+
 export interface PosteState {
 	configured: boolean;
 	connected: boolean;
@@ -81,4 +90,6 @@ export interface PosteState {
 	tasksError?: string | null;
 	approvals?: PosteApproval[] | null;
 	sessions?: PosteSession[] | null;
+	services?: PosteService[] | null;
+	projects?: { name: string; dir: string; host: string }[] | null;
 }

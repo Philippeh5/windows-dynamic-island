@@ -41,6 +41,8 @@ struct State {
     /// Questions and permissions waiting for an answer, and the open sessions.
     approvals: Value,
     sessions: Value,
+    services: Value,
+    projects: Value,
 }
 
 #[derive(Default)]
@@ -166,6 +168,15 @@ fn session_path(payload: &Value) -> Result<String, String> {
     ))
 }
 
+/// The pages the island may read.
+fn page_path(payload: &Value) -> Result<String, String> {
+    match payload["what"].as_str() {
+        Some(page @ ("postits" | "workflows" | "hermes")) => Ok(format!("/v1/{page}")),
+        Some("workflow") => Ok(format!("/v1/workflows/{}", event_id(&payload["id"])?)),
+        _ => Err("unknown page".to_string()),
+    }
+}
+
 impl Provider for PosteProvider {
     fn id(&self) -> &'static str {
         ID
@@ -190,6 +201,8 @@ impl Provider for PosteProvider {
                             state.announces = data["announces"].clone();
                             state.approvals = data["approvals"].clone();
                             state.sessions = data["sessions"].clone();
+                            state.services = data["services"].clone();
+                            state.projects = data["projects"].clone();
                         }
                         Err(e) => {
                             log::debug!("poste: {e}");
@@ -272,11 +285,50 @@ impl Provider for PosteProvider {
                 let path = format!("{}/send", session_path(&payload)?);
                 request(&hub, "POST", &path, Some(&json!({ "text": payload["text"] })))
             }
+            // What a page reads while it is open: nothing is polled for it otherwise.
+            "fetch" => request(&hub, "GET", &page_path(&payload)?, None),
+            "postit" => {
+                let body = json!({ "text": payload["text"], "sujet": payload["subject"] });
+                request(&hub, "POST", "/v1/postits", Some(&body))
+            }
+            "checkPostit" => {
+                let body = json!({
+                    "path": payload["path"],
+                    "index": payload["index"],
+                    "done": payload["done"],
+                    "label": payload["label"],
+                });
+                request(&hub, "POST", "/v1/postits/check", Some(&body))
+            }
+            "toggleFlow" => {
+                let path = format!("/v1/workflows/{}/toggle", event_id(&payload["id"])?);
+                request(&hub, "POST", &path, Some(&json!({ "enabled": payload["enabled"] })))
+            }
+            "runFlow" => {
+                let path = format!("/v1/workflows/{}/run", event_id(&payload["id"])?);
+                request(&hub, "POST", &path, Some(&json!({ "confirm": true })))
+            }
+            "say" => {
+                let body = json!({ "text": payload["text"], "speak": payload["speak"] });
+                request(&hub, "POST", "/v1/hermes", Some(&body))
+            }
+            "restart" => {
+                let path = format!("/v1/services/{}/restart", event_id(&payload["id"])?);
+                request(&hub, "POST", &path, Some(&json!({ "confirm": true })))
+            }
+            "newTask" => {
+                let body = json!({
+                    "title": payload["title"],
+                    "project": payload["project"],
+                    "start": payload["start"],
+                });
+                request(&hub, "POST", "/v1/tasks", Some(&body))
+            }
             // The screen of a session open in a terminal.
             "screen" => request(&hub, "GET", &session_path(&payload)?, None),
             _ => Err(format!("poste: unsupported action '{action}'")),
         };
-        if action != "screen"
+        if !matches!(action, "screen" | "fetch")
             && let Some(wake) = self.wake.lock().unwrap().as_ref()
         {
             let _ = wake.send(());

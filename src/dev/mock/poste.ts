@@ -25,6 +25,11 @@ const state = provider<PosteState>(POSTE_PROVIDER, {
 	announces: [],
 	events: [{ id: "ev1", title: "Dentiste", start: inDays(14, 10), end: null }],
 	agendaError: null,
+	services: [
+		{ id: "shop", group: "Shop", name: "frontend", running: true, restartable: true },
+		{ id: "bot", group: "Bots", name: "trader", running: false, restartable: false },
+	],
+	projects: [{ name: "boutique", dir: "/p/boutique", host: "oracle" }],
 	approvals: [],
 	sessions: [
 		{
@@ -60,6 +65,29 @@ const drop = (payload: unknown) => {
 };
 
 let count = 0;
+const thread = [{ role: "assistant", text: "Hello, I am here." }];
+let flowOn = true;
+
+/** The pages the island reads from the post while they are open. */
+function page({ what }: { what: string }) {
+	if (what === "hermes") return { available: true, busy: false, error: null, messages: [...thread] };
+	if (what === "postits") {
+		const text = "# Boutique\n- [ ] Check the payment page\n- [x] Logo";
+		return { postits: [{ path: "a.md", text, sujets: ["boutique"], couleur: "jaune", epingle: true }] };
+	}
+	if (what === "workflows") {
+		return { workflows: [{ id: "digest", name: "Weekly digest", enabled: flowOn, running: false, last: null }] };
+	}
+	const types = ["trigger.cron", "obsidian.list", "llm.ask", "telegram.send"];
+	return {
+		id: "digest",
+		name: "Weekly digest",
+		description: "Every Sunday: gather, sum up, send.",
+		nodes: types.map((type, i) => ({ id: String(i), type, x: i * 230, y: i % 2 ? 130 : 40, hint: i ? "" : "18:00" })),
+		edges: [0, 1, 2].map((i) => ({ from: String(i), to: String(i + 1), label: "" })),
+	};
+}
+
 export const poste = defineMock({
 	label: "Poste",
 	start: () => state.publish(),
@@ -130,6 +158,20 @@ export const poste = defineMock({
 			answer: () => state.set((s) => ({ ...s, approvals: (s.approvals ?? []).slice(1) })),
 			send: () => ({ sent: true }),
 			screen: () => ({ lines: ["⏺ Done.", "> "] }),
+			fetch: (payload) => page(payload as { what: string }),
+			say: (payload) => {
+				thread.push({ role: "user", text: (payload as { text: string }).text }, { role: "assistant", text: "Noted." });
+				return { accepted: true };
+			},
+			postit: () => null,
+			checkPostit: () => null,
+			toggleFlow: () => {
+				flowOn = !flowOn;
+				return null;
+			},
+			runFlow: () => null,
+			restart: () => null,
+			newTask: () => ({ id: "t1" }),
 			saveEvent: (payload) => {
 				const p = payload as { id: string | null; title: string; start: string };
 				const event: PosteEvent = { id: p.id ?? `ev${Date.now()}`, title: p.title, start: p.start, end: null };
