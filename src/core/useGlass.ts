@@ -3,7 +3,7 @@ import { command, isTauri } from "./bridge";
 import type { GlassLevel } from "./settings";
 
 /** The island's fill while the glass is on: dark enough to read, clear enough to see the blur. */
-const GLASS_TINT = "rgb(0 0 0 / 0.55)";
+const GLASS_TINT = { dark: "rgb(0 0 0 / 0.55)", light: "rgb(246 246 248 / 0.8)" };
 
 /** Unchanged frames before the outline is measured less often. */
 const IDLE_AFTER = 10;
@@ -75,7 +75,7 @@ export function useGlassSupported() {
  * while the island spins away). Measured every frame so the blur follows the
  * springs; only changes are sent.
  */
-export function useGlass(level: GlassLevel) {
+export function useGlass(level: GlassLevel, theme: "dark" | "light" = "dark") {
 	// Without the glass (Windows 10) the island stays solid, whatever is saved.
 	const enabled = useGlassSupported() && level !== "off";
 
@@ -84,10 +84,16 @@ export function useGlass(level: GlassLevel) {
 		if (isTauri && enabled) command("set_glass_level", { level });
 	}, [enabled, level]);
 
+	// Apart from the outline below: changing the theme only changes the fill. The inline value wins over the theme's.
 	useEffect(() => {
+		if (!enabled) return;
 		const root = document.documentElement.style;
-		if (enabled) root.setProperty("--island", GLASS_TINT);
-		if (!isTauri) return () => root.removeProperty("--island");
+		root.setProperty("--island", GLASS_TINT[theme]);
+		return () => void root.removeProperty("--island");
+	}, [enabled, theme]);
+
+	useEffect(() => {
+		if (!isTauri) return;
 
 		let raf = 0;
 		let last = "";
@@ -122,7 +128,6 @@ export function useGlass(level: GlassLevel) {
 		}
 		return () => {
 			cancelAnimationFrame(raf);
-			root.removeProperty("--island");
 			if (enabled) command("set_glass_shapes", { shapes: [] });
 		};
 	}, [enabled]);

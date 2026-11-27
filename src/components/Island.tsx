@@ -44,7 +44,7 @@ export function Island() {
 	const windows = look.style === "windows";
 	const v = variantOf(look);
 	useHitRects();
-	useGlass(look.glass);
+	useGlass(look.glass, theme);
 	useSyncLocale();
 	useIslandFileDrop(ctl);
 
