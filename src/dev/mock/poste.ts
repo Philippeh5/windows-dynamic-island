@@ -67,6 +67,7 @@ const drop = (payload: unknown) => {
 let count = 0;
 const thread = [{ role: "assistant", text: "Hello, I am here." }];
 let flowOn = true;
+let note: { text: string; couleur: string } | null = null;
 
 /** The pages the island reads from the post while they are open. */
 function page({ what }: { what: string }) {
@@ -74,7 +75,8 @@ function page({ what }: { what: string }) {
 	if (what === "postits") {
 		const text =
 			"# Boutique\n- [ ] Check the payment page\n- [x] Logo\n- [ ] **Course** [Options 101](https://example.test/a/very/long/address?x=1) · *free*";
-		return { postits: [{ path: "a.md", text, sujets: ["boutique"], couleur: "jaune", epingle: true }] };
+		const shown = note ?? { text, couleur: "jaune" };
+		return { postits: [{ path: "a.md", ...shown, sujets: ["boutique"], epingle: true }] };
 	}
 	if (what === "workflows") {
 		return { workflows: [{ id: "digest", name: "Weekly digest", enabled: flowOn, running: false, last: null }] };
@@ -176,6 +178,10 @@ export const poste = defineMock({
 			},
 			postit: () => null,
 			checkPostit: () => null,
+			editPostit: (payload) => {
+				const p = payload as { text: string; color: string };
+				note = { text: p.text, couleur: p.color };
+			},
 			toggleFlow: () => {
 				flowOn = !flowOn;
 				return null;

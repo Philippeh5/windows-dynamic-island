@@ -112,6 +112,9 @@
     send: "发送",
   },
   postits: {
+    edit: "编辑",
+    cancel: "取消",
+    save: "保存",
     title: "便签",
     loading: "加载中…",
     empty: "没有便签",

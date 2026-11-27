@@ -103,6 +103,9 @@
     send: "Enviar",
   },
   postits: {
+    edit: "Editar",
+    cancel: "Cancelar",
+    save: "Salvar",
     title: "Notas adesivas",
     loading: "Carregando…",
     empty: "Nenhuma nota",

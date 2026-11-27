@@ -305,6 +305,15 @@ impl Provider for PosteProvider {
                 let body = json!({ "text": payload["text"], "sujet": payload["subject"] });
                 request(&hub, "POST", "/v1/postits", Some(&body))
             }
+            "editPostit" => {
+                let body = json!({
+                    "path": payload["path"],
+                    "before": payload["before"],
+                    "text": payload["text"],
+                    "couleur": payload["color"],
+                });
+                request(&hub, "POST", "/v1/postits/edit", Some(&body))
+            }
             "checkPostit" => {
                 let body = json!({
                     "path": payload["path"],

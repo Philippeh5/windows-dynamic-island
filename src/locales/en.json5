@@ -116,6 +116,9 @@
     send: "Send",
   },
   postits: {
+    edit: "Edit",
+    cancel: "Cancel",
+    save: "Save",
     title: "Sticky notes",
     loading: "Loading…",
     empty: "No note",
