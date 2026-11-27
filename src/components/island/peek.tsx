@@ -72,6 +72,8 @@ export function PeekProvider({
 	const [at, setAt] = useState({ left: 0, top: 0 });
 	const timer = useRef<number | undefined>(undefined);
 	const box = useRef<HTMLDivElement>(null);
+	// The tallest the open card has been: shrinking would pull it from under the pointer.
+	const [tallest, setTallest] = useState(0);
 	const hover = useRef(onHover);
 	hover.current = onHover;
 
@@ -97,6 +99,7 @@ export function PeekProvider({
 	const show = useCallback(
 		(id: string, bubble: HTMLElement) => {
 			stay();
+			setTallest(0);
 			const alert = !!latest.current.find((e) => e.module.id === id)?.view.alert;
 			setShown({ id, alert, bubble: bubble.getBoundingClientRect() });
 		},
@@ -117,6 +120,8 @@ export function PeekProvider({
 		if (!el || !shown) return;
 		const place = () => {
 			const { width, height } = el.getBoundingClientRect();
+			const inner = el.firstElementChild as HTMLElement | null;
+			if (inner) setTallest((t) => Math.max(t, inner.offsetHeight));
 			const b = shown.bubble;
 			let left = b.left + b.width / 2 - width / 2;
 			let top = upward ? b.top - height : b.bottom;
@@ -169,6 +174,7 @@ export function PeekProvider({
 							style={{
 								width: Math.min(card.width, window.innerWidth - 2 * MARGIN),
 								maxHeight: window.innerHeight - 80,
+								minHeight: Math.min(tallest, window.innerHeight - 80),
 								boxShadow: card.color ? `inset 0 0 0 1.5px ${card.color}88` : undefined,
 							}}
 							initial={{ opacity: 0, scale: 0.92 }}

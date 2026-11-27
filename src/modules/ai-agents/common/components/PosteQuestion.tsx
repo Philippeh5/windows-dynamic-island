@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { command, providerAction } from "../../../../core/bridge";
 import { cn } from "../../../../core/cn";
 import { useT } from "../../../../core/i18n";
@@ -27,6 +27,7 @@ export function PosteQuestion({ item, more }: { item: PosteApproval; more: numbe
 		try {
 			await providerAction(POSTE_PROVIDER, "answer", { id: item.id, ...payload });
 			setSent(true);
+			drafts.delete(item.id);
 		} catch (e) {
 			setError(String(e));
 			setBusy(false);
@@ -43,7 +44,7 @@ export function PosteQuestion({ item, more }: { item: PosteApproval; more: numbe
 			{sent ? (
 				<p className="py-1 text-[13px] font-semibold">{t("agents.poste.sent")}</p>
 			) : item.questions.length > 0 ? (
-				<Steps questions={item.questions} busy={busy} onSend={(answers) => send({ answers })} />
+				<Steps id={item.id} questions={item.questions} busy={busy} onSend={(answers) => send({ answers })} />
 			) : (
 				<Permission item={item} busy={busy} onDecide={send} />
 			)}
@@ -52,20 +53,49 @@ export function PosteQuestion({ item, more }: { item: PosteApproval; more: numbe
 	);
 }
 
+interface Draft {
+	step: number;
+	picked: string[][];
+	typed: string[];
+}
+
+/** Answers under way, by question: the card can close and reopen (or move to the page) without losing them. */
+const drafts = new Map<string, Draft>();
+const draftListeners = new Set<() => void>();
+
+function useDraft(id: string, count: number) {
+	const [empty] = useState<Draft>(() => ({ step: 0, picked: Array(count).fill([]), typed: Array(count).fill("") }));
+	const draft = useSyncExternalStore(
+		(listener) => {
+			draftListeners.add(listener);
+			return () => draftListeners.delete(listener);
+		},
+		() => drafts.get(id) ?? empty,
+	);
+	const change = (part: Partial<Draft>) => {
+		drafts.set(id, { ...(drafts.get(id) ?? empty), ...part });
+		for (const listener of draftListeners) listener();
+	};
+	return [draft, change] as const;
+}
+
 function Steps({
+	id,
 	questions,
 	busy,
 	onSend,
 }: {
+	id: string;
 	questions: Question[];
 	busy: boolean;
 	onSend: (answers: Record<string, string | string[]>) => void;
 }) {
 	const t = useT();
 	const { keepOpen } = useIsland();
-	const [step, setStep] = useState(0);
-	const [picked, setPicked] = useState<string[][]>(() => questions.map(() => []));
-	const [typed, setTyped] = useState<string[]>(() => questions.map(() => ""));
+	const [{ step, picked, typed }, change] = useDraft(id, questions.length);
+	const setStep = (step: number) => change({ step });
+	const setPicked = (picked: string[][]) => change({ picked });
+	const setTyped = (typed: string[]) => change({ typed });
 	const q = questions[Math.min(step, questions.length - 1)];
 	const answered = picked[step]?.length > 0 || !!typed[step]?.trim();
 	const last = step >= questions.length - 1;
@@ -79,8 +109,10 @@ function Steps({
 	const toggle = (label: string) => {
 		const on = picked[step].includes(label);
 		const list = on ? picked[step].filter((l) => l !== label) : q.multiSelect ? [...picked[step], label] : [label];
-		setPicked(picked.map((l, n) => (n === step ? list : l)));
-		if (!q.multiSelect) setTyped(typed.map((v, n) => (n === step ? "" : v)));
+		change({
+			picked: picked.map((l, n) => (n === step ? list : l)),
+			...(q.multiSelect ? {} : { typed: typed.map((v, n) => (n === step ? "" : v)) }),
+		});
 	};
 
 	return (
@@ -142,8 +174,9 @@ function Steps({
 				onFocus={() => keepOpen(true, "poste-reply")}
 				onBlur={() => keepOpen(false, "poste-reply")}
 				onChange={(e) => {
-					setTyped(typed.map((v, n) => (n === step ? e.target.value : v)));
-					if (!q.multiSelect && e.target.value) setPicked(picked.map((l, n) => (n === step ? [] : l)));
+					const value = e.target.value;
+					setTyped(typed.map((v, n) => (n === step ? value : v)));
+					if (!q.multiSelect && value) setPicked(picked.map((l, n) => (n === step ? [] : l)));
 				}}
 				onKeyDown={(e) => e.key === "Enter" && next()}
 			/>

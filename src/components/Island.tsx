@@ -68,10 +68,13 @@ export function Island() {
 	const resting = mode === "compact" || mode === "idle";
 	// A module that waits for the user has its ringed bubble: no second one.
 	const calm = ctl.entries.filter((e) => !e.view.alert);
-	const showSecondary = mode === "compact" && secondary !== undefined && !secondary.view.alert;
+	// The side bubbles stay while the island is open.
+	const aside = !hidden && !swallowed && mode !== "idle";
+	const showSecondary = aside && secondary !== undefined && !secondary.view.alert;
 	const transition = big ? v.expandSpring : v.shellSpring;
 
-	const ambient = resting ? ambientWidth(calm.filter((e) => e.view.ambient).length) : 0;
+	const ambients = !hidden && !swallowed;
+	const ambient = ambients ? ambientWidth(calm.filter((e) => e.view.ambient).length) : 0;
 	const second = showSecondary ? BUBBLE_GAP + BUBBLE : 0;
 	const alerts = hidden || swallowed ? [] : waiting(ctl.entries);
 	const alertWidth = ambientWidth(alerts.length);
@@ -215,13 +218,13 @@ export function Island() {
 
 								<Satellites
 									entries={alerts}
-									offset={resting ? ambient : 0}
+									offset={ambient}
 									upward={drag.upward}
 									mirrored={edge === "left"}
 									onOpen={ctl.expand}
 								/>
 
-								<AmbientBubbles entries={calm} visible={resting} shrunk={mode === "idle" && !windows} {...bubble} />
+								<AmbientBubbles entries={calm} visible={ambients} shrunk={mode === "idle" && !windows} {...bubble} />
 								<SecondaryBubble entry={showSecondary ? secondary : undefined} {...bubble} />
 							</motion.div>
 						</motion.div>
