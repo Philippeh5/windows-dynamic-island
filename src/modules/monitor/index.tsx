@@ -12,6 +12,22 @@ import { MonitorPanel } from "./components/MonitorPanel";
 import { systemMonitorSettings } from "./settings";
 import { MONITOR_GREEN, MONITOR_PROVIDER, type MonitorState } from "./types";
 
+const percent = (used: number | null, total: number | null) => (used != null && total ? (used / total) * 100 : null);
+
+function Reading({ label, value }: { label: string; value: number | null }) {
+	if (value == null) return null;
+	return (
+		<span className="flex items-baseline gap-1 whitespace-nowrap first:pl-2">
+			<span className="text-[11px] font-bold text-text-faint">{label}</span>
+			<span
+				className={`text-[13.5px] font-bold tabular-nums ${value >= 90 ? "text-[#ff453a]" : value >= 70 ? "text-[#ff9f0a]" : "text-[#30d158]"}`}
+			>
+				{Math.round(value)}%
+			</span>
+		</span>
+	);
+}
+
 export const monitorModule: IslandModule = {
 	id: "monitor",
 	title: "monitor.title",
@@ -27,6 +43,19 @@ export const monitorModule: IslandModule = {
 			accent: MONITOR_GREEN,
 			icon: <ActivityIcon size={14} color={MONITOR_GREEN} />,
 			ambient: showBubble && state?.cpu != null ? <MonitorBubble state={state} /> : undefined,
+			summary:
+				state?.cpu == null
+					? undefined
+					: {
+							left: <Reading label="CPU" value={state.cpu} />,
+							right: (
+								<>
+									<Reading label="RAM" value={percent(state.memoryUsed, state.memoryTotal)} />
+									{state.gpu != null && <Reading label="GPU" value={state.gpu} />}
+								</>
+							),
+							width: 330,
+						},
 			expanded: <MonitorPanel state={state} />,
 			expandedSize: { width: 560, height: 132 },
 		};

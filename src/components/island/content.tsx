@@ -18,14 +18,15 @@ export function islandContent(ctl: IslandController, look: Appearance, v: Varian
 	const windows = look.style === "windows";
 
 	if (mode === "compact" && shown) {
+		const info = shown.view.compact ?? shown.view.summary;
 		return {
 			key: `compact:${shown.module.id}`,
 			node: (
 				<div className="flex h-full items-center justify-between pr-3 pl-2">
-					{shown.view.compact ? (
+					{info ? (
 						<>
-							<div className="flex min-w-0 items-center gap-2">{shown.view.compact.left}</div>
-							<div className="flex min-w-0 items-center justify-end gap-2">{shown.view.compact.right}</div>
+							<div className="flex min-w-0 items-center gap-2">{info.left}</div>
+							<div className="flex min-w-0 items-center justify-end gap-2">{info.right}</div>
 						</>
 					) : (
 						<PageName entry={shown} />

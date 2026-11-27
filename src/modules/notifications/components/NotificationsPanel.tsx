@@ -4,6 +4,7 @@ import { TextButton } from "../../../components/ui/button";
 import { Empty, SectionLabel } from "../../../components/ui/text";
 import { providerAction } from "../../../core/bridge";
 import { useT } from "../../../core/i18n";
+import { useIsland } from "../../../core/island";
 import { setSetting } from "../../../core/settings";
 import { formatAgo, useNow } from "../../ai-agents/common/format";
 import { newsClearedAt, newsReadAt } from "../news";
@@ -24,12 +25,13 @@ export function NotificationsPanel({
 	const unread = all.some((i) => !i.read);
 	const newest = all[0]?.receivedAt ?? 0;
 
-	// Looking at the list counts as reading it.
+	// Looking at the list counts as reading it; a passing peek does not, so the bubble stays.
+	const looking = useIsland().mode === "expanded";
 	useEffect(() => {
-		if (!unread) return;
+		if (!unread || !looking) return;
 		providerAction(NOTIFICATIONS_PROVIDER, "markRead");
 		setSetting(newsReadAt, newest);
-	}, [unread, newest]);
+	}, [unread, newest, looking]);
 
 	return (
 		<div className="flex h-full flex-col">

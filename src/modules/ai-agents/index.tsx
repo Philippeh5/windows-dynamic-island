@@ -1,5 +1,6 @@
 import { SparklesIcon } from "lucide-react";
 import { useProvider } from "../../core/bridge";
+import { useT } from "../../core/i18n";
 import { POSTE_PROVIDER, type PosteState } from "../../core/poste";
 import { posteLimits } from "../../core/posteData";
 /**
@@ -22,6 +23,7 @@ import { codexAgent } from "./codex";
 import { AgentCompactLeft, AgentCompactRight } from "./common/components/AgentCompact";
 import { AgentsPanel } from "./common/components/AgentsPanel";
 import { AgentsSettings } from "./common/components/AgentsSettings";
+import { PermissionPrompt } from "./common/components/PermissionPrompt";
 import { StatusGlyph } from "./common/components/StatusGlyph";
 import { useNow } from "./common/format";
 import { pickPrimary } from "./common/primary";
@@ -43,6 +45,14 @@ const AGENT_TABS = 34;
 const RANK: Record<AgentStatus, number> = { waiting: 0, limitsReset: 1, working: 2, done: 3, idle: 4 };
 const PRIORITY: Record<AgentStatus, number> = { waiting: 90, limitsReset: 80, done: 70, working: 60, idle: 0 };
 
+/** The first permission waiting for an answer. */
+function AskingCard({ sessions, now }: { sessions: AgentSessionRef[]; now: number }) {
+	const asking = sessions.filter((s) => s.session.permission && s.agent.decide);
+	const first = asking[0];
+	if (!first?.session.permission) return null;
+	return <PermissionPrompt key={first.session.permission.id} item={first} now={now} more={asking.length - 1} />;
+}
+
 export const aiAgentsModule: IslandModule = {
 	id: "ai-agents",
 	title: "agents.title",
@@ -51,6 +61,7 @@ export const aiAgentsModule: IslandModule = {
 	SettingsSection: () => <AgentsSettings agents={agents} />,
 	settingsSectionCards: true,
 	useView(): ModuleView {
+		const t = useT();
 		const peekOnWaiting = useSetting(agentSettings.peekOnWaiting);
 		const peekOnDone = useSetting(agentSettings.peekOnDone);
 		const peekOnLimitsReset = useSetting(agentSettings.peekOnLimitsReset);
@@ -106,6 +117,22 @@ export const aiAgentsModule: IslandModule = {
 			compact: hot && {
 				left: <AgentCompactLeft hot={hot} busyCount={busyCount} />,
 				right: <AgentCompactRight hot={hot} />,
+				width: 340,
+			},
+			// A question or a permission waiting: answered from its bubble.
+			alert: asking ? { color: "#ff9f0a", width: 480, node: <AskingCard sessions={sessions} now={now} /> } : undefined,
+			summary: {
+				left: (
+					<span className="flex items-center gap-2 pl-2 text-[13px] font-semibold whitespace-nowrap">
+						<StatusGlyph agent={primary} status="idle" size={15} />
+						{snapshots[0]?.limits.map((l) => `${l.label} ${Math.round(l.usedPct)}%`).join("  ·  ") || primary.name}
+					</span>
+				),
+				right: (
+					<span className="text-[12px] font-bold whitespace-nowrap text-text-dim">
+						{t("agents.sessionCount", { n: busyCount })}
+					</span>
+				),
 				width: 340,
 			},
 			expanded: <AgentsPanel agents={visible} snapshots={snapshots} sessions={recent} />,

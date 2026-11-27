@@ -74,7 +74,7 @@ export function geometry(
 		case "idle":
 			return look.style === "windows" && !look.idleClock ? WINDOWS_BARE_IDLE : v.idle;
 		case "compact":
-			return { ...v.compact, width: primary?.view.compact?.width ?? v.compact.width };
+			return { ...v.compact, width: (primary?.view.compact ?? primary?.view.summary)?.width ?? v.compact.width };
 		case "peek":
 		case "expanded": {
 			const size = bigSize ?? v.expanded;

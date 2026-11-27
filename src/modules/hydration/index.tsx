@@ -133,6 +133,26 @@ export const hydrationModule: IslandModule = {
 				/>
 			),
 			expandedSize: { width: 560, height: 128 },
+			alert: timer.due
+				? {
+						color: "#45c4e6",
+						width: 520,
+						node: (
+							<div className="h-30">
+								<HydrationPanel
+									deadline={timer.deadline}
+									pausedRemaining={timer.pausedRemaining}
+									due={timer.due}
+									onConfirm={timer.confirm}
+									onSnooze={timer.snooze}
+									onStart={timer.start}
+									onResume={timer.resume}
+									onPause={timer.pause}
+								/>
+							</div>
+						),
+					}
+				: undefined,
 			// This changes exactly once per reminder and lets the shared controller
 			// expand the module without changing any other island interaction.
 			activityKey: timer.due ? `due:${timer.deadline}` : undefined,

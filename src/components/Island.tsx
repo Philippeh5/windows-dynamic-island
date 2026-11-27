@@ -21,6 +21,7 @@ import { GlassProbes } from "./island/GlassProbes";
 import { ambientWidth, BUBBLE, BUBBLE_GAP, geometry, variantOf } from "./island/geometry";
 import { launcherSize } from "./island/Launcher";
 import { Rim } from "./island/Rim";
+import { Satellites, waiting } from "./island/Satellites";
 import { Surface } from "./island/Surface";
 import { statusLight } from "./island/statusLight";
 import { barWidthFor } from "./island/tabWindow";
@@ -62,6 +63,8 @@ export function Island() {
 
 	const ambient = resting ? ambientWidth(ctl.entries.filter((e) => e.view.ambient).length) : 0;
 	const second = showSecondary ? BUBBLE_GAP + BUBBLE : 0;
+	const alerts = hidden || swallowed ? [] : waiting(ctl.entries);
+	const alertWidth = ambientWidth(alerts.length);
 	const drag = useIslandDrag({
 		free: windows,
 		growUp: windows && look.tabsPosition === "bottom",
@@ -70,7 +73,7 @@ export function Island() {
 		extras: (p) =>
 			p.kind === "dock" && isSide(p.edge)
 				? { left: 0, right: 0, top: ambient, bottom: second }
-				: { left: g.ear + ambient, right: g.ear + second, top: 0, bottom: 0 },
+				: { left: g.ear + ambient + alertWidth, right: g.ear + second, top: 0, bottom: 0 },
 		canReturn: !big,
 		onDragChange: ctl.lockHover,
 	});
@@ -181,20 +184,32 @@ export function Island() {
 								</>
 							)}
 
-							<Surface
-								g={g}
-								big={big}
-								look={look}
-								transition={transition}
-								contentKey={content.key}
-								rim={rim}
-								edge={edge}
+							{/* Reached from a bubble, the island must still open on hover. */}
+							<div className="absolute inset-0 rounded-[inherit]" onPointerEnter={ctl.enterIsland}>
+								<Surface
+									g={g}
+									big={big}
+									look={look}
+									transition={transition}
+									contentKey={content.key}
+									rim={rim}
+									edge={edge}
+									upward={drag.upward}
+									zoom={zoom}
+									light={light}
+								>
+									{content.node}
+								</Surface>
+							</div>
+
+							<Satellites
+								entries={alerts}
+								offset={resting ? ambient : 0}
 								upward={drag.upward}
-								zoom={zoom}
-								light={light}
-							>
-								{content.node}
-							</Surface>
+								mirrored={edge === "left"}
+								onOpen={ctl.expand}
+								onHover={ctl.hoverBubble}
+							/>
 
 							<AmbientBubbles
 								entries={ctl.entries}

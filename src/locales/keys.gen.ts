@@ -161,6 +161,7 @@ export type MessageKey =
 	| "hydration.snooze.label"
 	| "hydration.snooze.desc"
 	| "hydration.snooze.action"
+	| "agents.sessionCount"
 	| "agents.title"
 	| "agents.approveInIsland.label"
 	| "agents.approveInIsland.desc"

@@ -42,6 +42,8 @@ export function useIslandHover({ expandOnHover, collapseOnLeave, onOpen, onClose
 	const locked = useRef(false);
 	const holds = useRef(new Set<string>());
 	const resizedAt = useRef(0);
+	/** On a bubble beside the island: that must not open the whole island. */
+	const overBubble = useRef(false);
 
 	useEffect(() => () => window.clearTimeout(timer.current), []);
 
@@ -65,12 +67,24 @@ export function useIslandHover({ expandOnHover, collapseOnLeave, onOpen, onClose
 		(inside: boolean) => {
 			pointerInside.current = inside;
 			if (locked.current || holds.current.size > 0) return;
+			if (inside && overBubble.current && !openRef.current) return;
 			const { expandOnHover, collapseOnLeave } = latest.current;
 			if (inside ? expandOnHover : collapseOnLeave) transition(inside);
 			else window.clearTimeout(timer.current);
 		},
 		[transition],
 	);
+
+	const hoverBubble = useCallback((on: boolean) => {
+		overBubble.current = on;
+		if (on && !openRef.current) window.clearTimeout(timer.current);
+	}, []);
+
+	/** The pointer reached the island itself (coming from a bubble, nothing else says so). */
+	const enterIsland = useCallback(() => {
+		overBubble.current = false;
+		if (!locked.current && latest.current.expandOnHover) transition(true);
+	}, [transition]);
 
 	const lockHover = useCallback((on: boolean) => {
 		locked.current = on;
@@ -118,5 +132,18 @@ export function useIslandHover({ expandOnHover, collapseOnLeave, onOpen, onClose
 		[keepOpen],
 	);
 
-	return { open, pinned, setPin, expand, collapse, onPointer, onPressOutside, keepOpen, lockHover, expectResize };
+	return {
+		open,
+		pinned,
+		setPin,
+		expand,
+		collapse,
+		onPointer,
+		onPressOutside,
+		keepOpen,
+		lockHover,
+		expectResize,
+		hoverBubble,
+		enterIsland,
+	};
 }

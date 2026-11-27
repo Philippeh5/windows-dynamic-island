@@ -1,11 +1,12 @@
 import { FolderIcon } from "lucide-react";
+import { useProvider } from "../../core/bridge";
 /**
  * Shelf — like the notch apps on the Mac: drag files or folders onto the
  * island and it keeps them for a moment (by reference, nothing is copied).
  * Drag them out to any app, double-click to open, or ask Claude about them.
  * Backend: `src-tauri/src/providers/shelf.rs`.
  */
-import { useProvider } from "../../core/bridge";
+import { useT } from "../../core/i18n";
 import { draggingFiles } from "../../core/island";
 import type { IslandModule, ModuleView } from "../../core/types";
 import { SHELF_PROVIDER, type ShelfState } from "./actions";
@@ -22,6 +23,7 @@ export const shelfModule: IslandModule = {
 	useView(): ModuleView {
 		const state = useProvider<ShelfState>(SHELF_PROVIDER);
 		const dragging = draggingFiles.use();
+		const t = useT();
 		const count = state?.items.length ?? 0;
 		const rows = Math.min(2, Math.max(1, Math.ceil(count / PER_ROW)));
 
@@ -32,6 +34,16 @@ export const shelfModule: IslandModule = {
 			hidden: count === 0 && !dragging,
 			accent: SHELF_BLUE,
 			icon: <FolderIcon size={14} color={SHELF_BLUE} />,
+			summary: {
+				left: (
+					<span className="flex items-center gap-2 pl-2 text-[13px] font-semibold">
+						<FolderIcon size={14} color={SHELF_BLUE} />
+						{t("shelf.title")}
+					</span>
+				),
+				right: <span className="text-[13px] font-bold tabular-nums">{count}</span>,
+				width: 265,
+			},
 			expanded: <ShelfPanel state={state} />,
 			expandedSize: { width: 560, height: 54 + rows * ROW },
 		};

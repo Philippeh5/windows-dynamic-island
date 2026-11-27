@@ -12,6 +12,7 @@ import { posteNotifications } from "../../core/posteData";
 import { useSetting } from "../../core/settings";
 import type { IslandModule, ModuleView } from "../../core/types";
 import { useNow } from "../ai-agents/common/format";
+import { NotificationCard } from "./components/NotificationCard";
 import { NotificationsPanel } from "./components/NotificationsPanel";
 import { NotificationsSettings } from "./components/NotificationsSettings";
 import { newsClearedAt, newsReadAt } from "./news";
@@ -60,6 +61,9 @@ export const notificationsModule: IslandModule = {
 					) : null,
 				width: 340,
 			},
+			alert: recent
+				? { color: NOTIFICATION_BLUE, width: 320, node: <NotificationCard item={latest} unread={unread.length} /> }
+				: undefined,
 			expanded: <NotificationsPanel state={state} items={items} />,
 			expandedSize: { width: 560, height: 66 + Math.min(Math.max(items.length, 1), 4) * ROW },
 		};

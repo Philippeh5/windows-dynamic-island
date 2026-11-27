@@ -25,6 +25,10 @@ export interface ModuleView {
 	 * module's tab.
 	 */
 	ambient?: ReactNode;
+	/** What the closed island shows when this is the last page looked at and `compact` has nothing. */
+	summary?: { left: ReactNode; right: ReactNode; width?: number };
+	/** Something waiting for the user: a ringed bubble beside the island, whose card opens on hover. */
+	alert?: { color: string; node: ReactNode; width: number };
 	/** Full panel shown on hover / peek. */
 	expanded: ReactNode;
 	/** Panel size in px (default 560×190). */

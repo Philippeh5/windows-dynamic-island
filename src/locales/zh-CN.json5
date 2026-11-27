@@ -262,6 +262,7 @@
 
   // AI 智能体模块
   agents: {
+    sessionCount: "{n} 个进行中",
     title: "AI 智能体",
     approveInIsland: {
       label: "在灵动岛中审批权限请求",

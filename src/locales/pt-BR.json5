@@ -248,6 +248,7 @@
 
   // Módulo AI Agents
   agents: {
+    sessionCount: "{n} em andamento",
     title: "AI Agents",
     approveInIsland: {
       label: "Responder pedidos de permissão na ilha",

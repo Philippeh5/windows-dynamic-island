@@ -143,6 +143,8 @@ export function useIslandController(modules: IslandModule[]) {
 		pinned: hover.pinned,
 		setPinned: hover.setPin,
 		lockHover: hover.lockHover,
+		hoverBubble: hover.hoverBubble,
+		enterIsland: hover.enterIsland,
 		onWheel,
 		/** Browser-only hover handlers (Tauri uses the backend hit-test). */
 		domHover: isTauri

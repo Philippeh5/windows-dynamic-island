@@ -42,6 +42,20 @@ export const githubModule: IslandModule = {
 			priority: 0,
 			icon: <GitHubIcon size={16} />,
 			ambient: showBubble && loaded ? <GithubBubble count={total} fresh={!!newest} /> : undefined,
+			summary: loaded
+				? {
+						left: (
+							<span className="flex min-w-0 items-center gap-2 pl-2">
+								<GitHubIcon size={15} />
+								<span className="max-w-50 truncate text-[13px] font-semibold">
+									{newest?.item.title ?? repos[0]?.name}
+								</span>
+							</span>
+						),
+						right: <span className="text-[12px] font-bold whitespace-nowrap text-text-dim">{total} issues</span>,
+						width: 340,
+					}
+				: undefined,
 			expanded: <GithubPanel state={state} news={news} />,
 			expandedSize: { width: 560, height: 70 + rows * ROW },
 			activityKey: newest ? `${newest.kind}:${newest.repo}:${newest.item.id}` : undefined,
