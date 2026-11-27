@@ -4,6 +4,7 @@ import { tv } from "tailwind-variants";
 import { cn } from "../../core/cn";
 import type { ModuleEntry } from "../../core/types";
 import { GlassProbes } from "./GlassProbes";
+import { useBubblePeek } from "./peek";
 
 interface BubbleProps {
 	transition: Transition;
@@ -90,10 +91,13 @@ function Bubble({
 	layout?: boolean;
 	children: ReactNode;
 }) {
+	const { close, ...peek } = useBubblePeek(id);
 	return (
 		<motion.button
 			className={bubble({ side, ambient })}
-			data-hit
+			data-hit="bubble"
+			data-no-drag
+			{...peek}
 			data-glass
 			layout={layout}
 			initial={{ opacity: 0, scale: 0.3, x: from }}
@@ -102,6 +106,7 @@ function Bubble({
 			transition={transition}
 			onClick={(e) => {
 				e.stopPropagation();
+				close();
 				onOpen(id);
 			}}
 		>

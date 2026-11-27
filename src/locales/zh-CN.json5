@@ -152,6 +152,8 @@
     running: "{up}/{total} 个服务运行中",
   },
   tasks: {
+    notes: "说明",
+    save: "保存",
     title: "Google Tasks",
     loading: "加载中…",
     empty: "没有待办",
@@ -311,6 +313,10 @@
   // AI 智能体模块
   agents: {
     poste: {
+      back: "上一步",
+      next: "下一步",
+      showScreen: "显示终端",
+      hideScreen: "隐藏终端",
       sessions: "远程会话",
       none: "没有打开的会话",
       other: "其他回答…",
@@ -865,6 +871,9 @@
   // 日历：由时钟模块展示 Google 账号和 iCal 链接日程
   // (src-tauri/src/providers/calendar)
   calendar: {
+    viewMonth: "月视图",
+    viewUpcoming: "即将到来",
+    nothing: "暂无日程",
     event: {
       add: "添加日程",
       title: "标题",

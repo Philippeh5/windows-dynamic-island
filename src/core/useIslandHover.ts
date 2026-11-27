@@ -9,6 +9,7 @@ const HOVER_OUT_DELAY = 380;
 const RESIZE_GRACE_MS = 2000;
 const RESIZE_OUT_DELAY = 1200;
 /** `keepOpen` reason held while the island is pinned. */
+const BUBBLE_HOLD = "bubble";
 const PIN_HOLD = "pin";
 
 interface Options {
@@ -75,10 +76,19 @@ export function useIslandHover({ expandOnHover, collapseOnLeave, onOpen, onClose
 		[transition],
 	);
 
-	const hoverBubble = useCallback((on: boolean) => {
-		overBubble.current = on;
-		if (on && !openRef.current) window.clearTimeout(timer.current);
-	}, []);
+	const hoverBubble = useCallback(
+		(on: boolean) => {
+			overBubble.current = on;
+			if (on && !openRef.current) window.clearTimeout(timer.current);
+			// Reached from the open island, a bubble keeps it open: it would move away under the pointer.
+			else if (on) holds.current.add(BUBBLE_HOLD);
+			if (on) window.clearTimeout(timer.current);
+			else if (holds.current.delete(BUBBLE_HOLD) && !holds.current.size && !pointerInside.current) {
+				if (latest.current.collapseOnLeave) transition(false);
+			}
+		},
+		[transition],
+	);
 
 	/** The pointer reached the island itself (coming from a bubble, nothing else says so). */
 	const enterIsland = useCallback(() => {

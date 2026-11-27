@@ -10,6 +10,7 @@ import type { IslandModule, ModuleView } from "../../core/types";
 import { useNow } from "../ai-agents/common/format";
 import { GithubBubble } from "./components/GithubBubble";
 import { GithubPanel } from "./components/GithubPanel";
+import { GithubPeek } from "./components/GithubPeek";
 import { GithubSettings } from "./components/GithubSettings";
 import { freshNews } from "./repo";
 import { githubSettings } from "./settings";
@@ -56,6 +57,7 @@ export const githubModule: IslandModule = {
 						width: 340,
 					}
 				: undefined,
+			peek: loaded ? { node: <GithubPeek repos={repos} news={news} />, width: 340 } : undefined,
 			expanded: <GithubPanel state={state} news={news} />,
 			expandedSize: { width: 560, height: 70 + rows * ROW },
 			activityKey: newest ? `${newest.kind}:${newest.repo}:${newest.item.id}` : undefined,

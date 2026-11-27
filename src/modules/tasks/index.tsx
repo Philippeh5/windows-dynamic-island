@@ -45,7 +45,7 @@ export const tasksModule: IslandModule = {
 					}
 				: undefined,
 			expanded: <TasksPanel lists={lists} error={poste?.tasksError} />,
-			expandedSize: { width: 560, height: 290 },
+			expandedSize: { width: 600, height: 420 },
 		};
 	},
 };

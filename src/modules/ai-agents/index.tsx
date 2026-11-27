@@ -114,8 +114,8 @@ export const aiAgentsModule: IslandModule = {
 		const approvals = poste?.approvals ?? [];
 		const remote = poste?.sessions ?? [];
 		const question = approvals[0];
-		const posteHeight =
-			(question ? 200 + question.questions.length * 70 : 0) + (poste?.configured ? 40 + remote.length * 30 : 0);
+		const options = Math.max(0, ...(question?.questions.map((q) => q.options.length) ?? []));
+		const posteHeight = (question ? 190 + options * 48 : 0) + (poste?.configured ? 40 + remote.length * 30 : 0);
 		const asking = sessions.some((s) => s.session.permission && s.agent.decide);
 		// The room the local agents need, without the island's own header.
 		const usageHeight = asking

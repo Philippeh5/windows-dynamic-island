@@ -17,15 +17,24 @@ import { POSTE_PROVIDER, type PosteState } from "../../core/poste";
 import { REMINDER_MARK, withPosteEvents } from "../../core/posteData";
 import { useSetting } from "../../core/settings";
 import type { IslandModule, ModuleView } from "../../core/types";
-import { useNow } from "../ai-agents/common/format";
+import { useClock, useNow } from "../ai-agents/common/format";
 import { CalendarSettings } from "./components/CalendarSettings";
 import { ClockPanel } from "./components/ClockPanel";
 import { dueReminder, type LeadsOf, reminderSoon } from "./events";
-import { calendarSettings, eventReminders, leadList, remindMinutes, remindSound } from "./settings";
+import {
+	calendarSettings,
+	calendarViewSetting,
+	eventReminders,
+	leadList,
+	remindMinutes,
+	remindSound,
+} from "./settings";
 import { CALENDAR_PROVIDER, type CalEvent, type CalendarState, CLOCK_RED } from "./types";
 
 /** Panel height with the day's event list under the date. */
-const HEIGHT_WITH_EVENTS = 236;
+const HEIGHT_WITH_EVENTS = 262;
+/** The list of what is coming. */
+const HEIGHT_UPCOMING = 380;
 
 function ReminderLeft({ event, color }: { event: CalEvent; color: string }) {
 	const t = useT();
@@ -82,7 +91,9 @@ export const clockModule: IslandModule = {
 		const events = (calendar?.events ?? []).filter((e) => !e.title.startsWith(REMINDER_MARK));
 
 		// Tick only while a reminder is close; otherwise a slow clock notices the next one coming.
-		const coarse = useNow(30_000);
+		// On the minute, so the closed island never shows an earlier time than the open one.
+		const coarse = useClock();
+		const view = useSetting(calendarViewSetting);
 		const close = remind && !!(dueReminder(events, coarse, leadsOf) || reminderSoon(events, coarse, 60_000, leadsOf));
 		const fine = useNow(5_000, close);
 		const now = close ? Math.max(fine, coarse) : coarse;
@@ -121,7 +132,10 @@ export const clockModule: IslandModule = {
 						width: 265,
 					},
 			expanded: <ClockPanel calendar={calendar} highlight={due?.id} editable={!!poste?.configured} />,
-			expandedSize: { width: 560, height: calendar?.calendars.length ? HEIGHT_WITH_EVENTS : 214 },
+			expandedSize: {
+				width: 560,
+				height: !calendar?.calendars.length ? 214 : view === "upcoming" ? HEIGHT_UPCOMING : HEIGHT_WITH_EVENTS,
+			},
 			// Peeks at each reminder, and again when the event starts.
 			activityKey,
 		};

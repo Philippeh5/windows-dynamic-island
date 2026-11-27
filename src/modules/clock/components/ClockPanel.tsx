@@ -3,10 +3,14 @@ import { command } from "../../../core/bridge";
 import { cn } from "../../../core/cn";
 import { useLocale, useT } from "../../../core/i18n";
 import { POSTE_CALENDAR } from "../../../core/posteData";
+import { setSetting, useSetting } from "../../../core/settings";
 import { useNow } from "../../ai-agents/common/format";
 import { DAY_MS, dayDots, eventsOn, sameDay, startOfDay } from "../events";
+import { calendarViewSetting } from "../settings";
 import type { CalEvent, CalendarState } from "../types";
+import { upcomingDays } from "../upcoming";
 import { EventForm } from "./EventForm";
+import { Upcoming } from "./Upcoming";
 
 /** The wheel over the calendar flips months at most this often. */
 const WHEEL_STEP_MS = 220;
@@ -146,6 +150,58 @@ export function ClockPanel({
 		);
 	};
 
+	const view = useSetting(calendarViewSetting);
+	const toggle = hasSources && (
+		<div className="flex flex-none gap-0.5 self-start rounded-full bg-white/6 p-0.5" role="tablist">
+			{(["month", "upcoming"] as const).map((v) => (
+				<button
+					type="button"
+					key={v}
+					role="tab"
+					aria-selected={view === v}
+					className={cn(
+						"h-5.5 rounded-full px-2.5 text-[11.5px] font-[650]",
+						view === v ? "bg-white/16 text-text" : "text-text-dim hover:text-text",
+					)}
+					onClick={() => setSetting(calendarViewSetting, v)}
+				>
+					{t(v === "month" ? "calendar.viewMonth" : "calendar.viewUpcoming")}
+				</button>
+			))}
+		</div>
+	);
+
+	if (hasSources && view === "upcoming") {
+		return (
+			<div className="flex h-full min-h-0 flex-col gap-1.5 px-1" onClick={(e) => e.stopPropagation()}>
+				<div className="flex items-center gap-2">
+					{toggle}
+					<span className="min-w-0 flex-1 truncate text-right text-[12px] font-semibold text-text-dim first-letter:uppercase">
+						{longDate} · {time}
+					</span>
+					{editable && editing === undefined && (
+						<button
+							type="button"
+							className="h-6 flex-none rounded-full bg-white/8 px-2.5 text-[11.5px] font-[650] text-text-dim hover:bg-white/14"
+							onClick={() => setEditing(null)}
+						>
+							+ {t("calendar.event.add")}
+						</button>
+					)}
+				</div>
+				{editing !== undefined ? (
+					<EventForm key={editing?.id ?? "new"} event={editing} day={today} onDone={() => setEditing(undefined)} />
+				) : (
+					<Upcoming
+						days={upcomingDays(events ?? [], now)}
+						colors={colors}
+						onOpen={(e) => (e.calendar === POSTE_CALENDAR && !e.allDay ? setEditing(e) : openLink(e.url))}
+					/>
+				)}
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex h-full items-stretch justify-between gap-6 px-1" onClick={(e) => e.stopPropagation()}>
 			<div
@@ -167,6 +223,7 @@ export function ClockPanel({
 				<span className="text-[12px] text-text-faint first-letter:uppercase">
 					{selected && !sameDay(selected, today) ? relative : t("clock.week", { n: isoWeek(focus) })}
 				</span>
+				{editing === undefined && toggle}
 				{editing !== undefined && (
 					<EventForm key={editing?.id ?? "new"} event={editing} day={focus} onDone={() => setEditing(undefined)} />
 				)}

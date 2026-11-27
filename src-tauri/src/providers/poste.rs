@@ -261,8 +261,22 @@ impl Provider for PosteProvider {
                 request(&hub, "POST", &path, Some(&json!({ "confirm": true })))
             }
             "addTask" => {
-                let body = json!({ "list": payload["list"], "title": payload["title"], "due": payload["due"] });
+                let body = json!({
+                    "list": payload["list"],
+                    "title": payload["title"],
+                    "due": payload["due"],
+                    "notes": payload["notes"],
+                });
                 request(&hub, "POST", "/v1/gtasks", Some(&body))
+            }
+            "editTask" => {
+                let path = task_path(&payload)?;
+                let body = json!({
+                    "title": payload["title"],
+                    "due": payload["due"],
+                    "notes": payload["notes"],
+                });
+                request(&hub, "POST", &path, Some(&body))
             }
             "completeTask" => {
                 let path = task_path(&payload)?;

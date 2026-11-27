@@ -48,7 +48,7 @@ const state = provider<PosteState>(POSTE_PROVIDER, {
 			id: "L1",
 			title: "Mes tâches",
 			tasks: [
-				{ id: "t1", title: "Appeler la banque", due: "2026-11-20" },
+				{ id: "t1", title: "Appeler la banque", notes: "Demander le nouveau plafond de la carte.", due: "2026-11-20" },
 				{ id: "t2", title: "Réviser", due: null },
 			],
 		},
@@ -151,6 +151,16 @@ export const poste = defineMock({
 					taskLists: s.taskLists?.map((l) =>
 						l.id === p.list ? { ...l, tasks: [...l.tasks, { id: `t${Date.now()}`, title: p.title, due: p.due }] } : l,
 					),
+				}));
+			},
+			editTask: (payload) => {
+				const p = payload as { list: string; task: string; title: string; notes: string; due: string | null };
+				state.set((s) => ({
+					...s,
+					taskLists: s.taskLists?.map((l) => ({
+						...l,
+						tasks: l.tasks.map((x) => (x.id === p.task ? { ...x, title: p.title, notes: p.notes, due: p.due } : x)),
+					})),
 				}));
 			},
 			completeTask: (payload) => drop(payload),

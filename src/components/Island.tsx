@@ -20,6 +20,7 @@ import { islandContent } from "./island/content";
 import { GlassProbes } from "./island/GlassProbes";
 import { ambientWidth, BUBBLE, BUBBLE_GAP, geometry, variantOf } from "./island/geometry";
 import { launcherSize } from "./island/Launcher";
+import { PeekProvider } from "./island/peek";
 import { Rim } from "./island/Rim";
 import { Satellites, waiting } from "./island/Satellites";
 import { Surface } from "./island/Surface";
@@ -65,10 +66,12 @@ export function Island() {
 	const hidden = mode === "hidden";
 	const swallowed = mode === "swallowed";
 	const resting = mode === "compact" || mode === "idle";
-	const showSecondary = mode === "compact" && secondary !== undefined;
+	// A module that waits for the user has its ringed bubble: no second one.
+	const calm = ctl.entries.filter((e) => !e.view.alert);
+	const showSecondary = mode === "compact" && secondary !== undefined && !secondary.view.alert;
 	const transition = big ? v.expandSpring : v.shellSpring;
 
-	const ambient = resting ? ambientWidth(ctl.entries.filter((e) => e.view.ambient).length) : 0;
+	const ambient = resting ? ambientWidth(calm.filter((e) => e.view.ambient).length) : 0;
 	const second = showSecondary ? BUBBLE_GAP + BUBBLE : 0;
 	const alerts = hidden || swallowed ? [] : waiting(ctl.entries);
 	const alertWidth = ambientWidth(alerts.length);
@@ -117,118 +120,114 @@ export function Island() {
 
 	return (
 		<IslandContext.Provider value={api}>
-			<PluginBackgrounds />
-			<div className="pointer-events-none fixed inset-0 overflow-hidden">
-				{/* The island's spot on screen; the shell inside only deforms and resizes. */}
-				<motion.div className="pointer-events-none absolute top-0 left-0" style={drag.position}>
-					{/* The tray's black hole: the island spins into its own center and comes back out. */}
-					<motion.div
-						className="pointer-events-none relative flex origin-center justify-center"
-						// Spinning away can't be followed by a rectangular cutout.
-						{...(swallowed ? { "data-glass-off": true } : {})}
-						initial={false}
-						animate={swallowed ? { scale: 0, rotate: -200, opacity: 0 } : { scale: 1, rotate: 0, opacity: 1 }}
-						transition={
-							swallowed
-								? { duration: 0.46, ease: [0.55, 0, 1, 0.45] }
-								: { duration: 0.56, ease: [0.34, 1.4, 0.64, 1], opacity: { duration: 0.26 } }
-						}
-					>
+			<PeekProvider entries={ctl.entries} upward={drag.upward} side={side} onHover={ctl.hoverBubble}>
+				<PluginBackgrounds />
+				<div className="pointer-events-none fixed inset-0 overflow-hidden">
+					{/* The island's spot on screen; the shell inside only deforms and resizes. */}
+					<motion.div className="pointer-events-none absolute top-0 left-0" style={drag.position}>
+						{/* The tray's black hole: the island spins into its own center and comes back out. */}
 						<motion.div
-							className={cn(
-								"pointer-events-auto relative touch-none will-change-[width,height,transform]",
-								drag.dragging && "cursor-grabbing **:cursor-grabbing",
-							)}
-							{...(hidden || swallowed ? {} : { "data-hit": true })}
-							{...ctl.domHover}
-							style={drag.style}
-							onPointerDown={drag.onPointerDown}
-							onClickCapture={drag.onClickCapture}
-							onUpdate={drag.onShellUpdate}
-							onWheel={ctl.onWheel}
+							className="pointer-events-none relative flex origin-center justify-center"
+							// Spinning away can't be followed by a rectangular cutout.
+							{...(swallowed ? { "data-glass-off": true } : {})}
 							initial={false}
-							animate={{
-								width: g.width,
-								height: g.height,
-								opacity: hidden ? 0 : 1,
-								x: hidden ? away.x : 0,
-								y: hidden ? away.y : 0,
-							}}
-							transition={transition}
-							onClick={() => resting && ctl.expand()}
+							animate={swallowed ? { scale: 0, rotate: -200, opacity: 0 } : { scale: 1, rotate: 0, opacity: 1 }}
+							transition={
+								swallowed
+									? { duration: 0.46, ease: [0.55, 0, 1, 0.45] }
+									: { duration: 0.56, ease: [0.34, 1.4, 0.64, 1], opacity: { duration: 0.26 } }
+							}
 						>
-							{/* Concave "ears" that blend the notch into the top edge of the screen. */}
-							{ears && (
-								<>
-									<motion.span
-										data-glass={drag.upward ? undefined : "earLeft"}
-										className={cn(
-											"pointer-events-none absolute right-full",
-											drag.upward
-												? "bottom-0 bg-[radial-gradient(circle_at_0_0,transparent_70%,var(--island)_71%)]"
-												: "top-0 bg-[radial-gradient(circle_at_0_100%,transparent_70%,var(--island)_71%)]",
-										)}
-										initial={false}
-										animate={{ width: g.ear, height: g.ear }}
-										transition={v.shellSpring}
-									>
-										<GlassProbes />
-									</motion.span>
-									<motion.span
-										data-glass={drag.upward ? undefined : "earRight"}
-										className={cn(
-											"pointer-events-none absolute left-full",
-											drag.upward
-												? "bottom-0 bg-[radial-gradient(circle_at_100%_0,transparent_70%,var(--island)_71%)]"
-												: "top-0 bg-[radial-gradient(circle_at_100%_100%,transparent_70%,var(--island)_71%)]",
-										)}
-										initial={false}
-										animate={{ width: g.ear, height: g.ear }}
-										transition={v.shellSpring}
-									>
-										<GlassProbes />
-									</motion.span>
-								</>
-							)}
+							<motion.div
+								className={cn(
+									"pointer-events-auto relative touch-none will-change-[width,height,transform]",
+									drag.dragging && "cursor-grabbing **:cursor-grabbing",
+								)}
+								{...(hidden || swallowed ? {} : { "data-hit": true })}
+								{...ctl.domHover}
+								style={drag.style}
+								onPointerDown={drag.onPointerDown}
+								onClickCapture={drag.onClickCapture}
+								onUpdate={drag.onShellUpdate}
+								onWheel={ctl.onWheel}
+								initial={false}
+								animate={{
+									width: g.width,
+									height: g.height,
+									opacity: hidden ? 0 : 1,
+									x: hidden ? away.x : 0,
+									y: hidden ? away.y : 0,
+								}}
+								transition={transition}
+								onClick={() => resting && ctl.expand()}
+							>
+								{/* Concave "ears" that blend the notch into the top edge of the screen. */}
+								{ears && (
+									<>
+										<motion.span
+											data-glass={drag.upward ? undefined : "earLeft"}
+											className={cn(
+												"pointer-events-none absolute right-full",
+												drag.upward
+													? "bottom-0 bg-[radial-gradient(circle_at_0_0,transparent_70%,var(--island)_71%)]"
+													: "top-0 bg-[radial-gradient(circle_at_0_100%,transparent_70%,var(--island)_71%)]",
+											)}
+											initial={false}
+											animate={{ width: g.ear, height: g.ear }}
+											transition={v.shellSpring}
+										>
+											<GlassProbes />
+										</motion.span>
+										<motion.span
+											data-glass={drag.upward ? undefined : "earRight"}
+											className={cn(
+												"pointer-events-none absolute left-full",
+												drag.upward
+													? "bottom-0 bg-[radial-gradient(circle_at_100%_0,transparent_70%,var(--island)_71%)]"
+													: "top-0 bg-[radial-gradient(circle_at_100%_100%,transparent_70%,var(--island)_71%)]",
+											)}
+											initial={false}
+											animate={{ width: g.ear, height: g.ear }}
+											transition={v.shellSpring}
+										>
+											<GlassProbes />
+										</motion.span>
+									</>
+								)}
 
-							{/* Reached from a bubble, the island must still open on hover. */}
-							<div className="absolute inset-0 rounded-[inherit]" onPointerEnter={ctl.enterIsland}>
-								<Surface
-									g={g}
-									big={big}
-									look={look}
-									transition={transition}
-									contentKey={content.key}
-									rim={rim}
-									edge={edge}
+								{/* Reached from a bubble, the island must still open on hover. */}
+								<div className="absolute inset-0 rounded-[inherit]" onPointerEnter={ctl.enterIsland}>
+									<Surface
+										g={g}
+										big={big}
+										look={look}
+										transition={transition}
+										contentKey={content.key}
+										rim={rim}
+										edge={edge}
+										upward={drag.upward}
+										zoom={zoom}
+										light={light}
+									>
+										{content.node}
+									</Surface>
+								</div>
+
+								<Satellites
+									entries={alerts}
+									offset={resting ? ambient : 0}
 									upward={drag.upward}
-									zoom={zoom}
-									light={light}
-								>
-									{content.node}
-								</Surface>
-							</div>
+									mirrored={edge === "left"}
+									onOpen={ctl.expand}
+								/>
 
-							<Satellites
-								entries={alerts}
-								offset={resting ? ambient : 0}
-								upward={drag.upward}
-								mirrored={edge === "left"}
-								onOpen={ctl.expand}
-								onHover={ctl.hoverBubble}
-							/>
-
-							<AmbientBubbles
-								entries={ctl.entries}
-								visible={resting}
-								shrunk={mode === "idle" && !windows}
-								{...bubble}
-							/>
-							<SecondaryBubble entry={showSecondary ? secondary : undefined} {...bubble} />
+								<AmbientBubbles entries={calm} visible={resting} shrunk={mode === "idle" && !windows} {...bubble} />
+								<SecondaryBubble entry={showSecondary ? secondary : undefined} {...bubble} />
+							</motion.div>
 						</motion.div>
 					</motion.div>
-				</motion.div>
-			</div>
+				</div>
+			</PeekProvider>
 		</IslandContext.Provider>
 	);
 }

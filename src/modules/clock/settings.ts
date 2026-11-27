@@ -1,5 +1,12 @@
 import type { SettingDef } from "../../core/settings";
 
+/** The calendar page: the month with the picked day, or the list of what is coming (switched on the page). */
+export const calendarViewSetting = {
+	key: "calendar.view",
+	label: "calendar.viewUpcoming",
+	default: "month" as "month" | "upcoming",
+} as SettingDef<"month" | "upcoming">;
+
 export const calendarSettings = {
 	remind: {
 		key: "calendar.remind",

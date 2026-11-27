@@ -6,7 +6,8 @@ const PAD = 6;
 /**
  * Keeps the backend informed about which parts of the transparent window are
  * interactive. Every element marked with `data-hit` counts; the rects follow
- * animations because they are re-measured every few frames.
+ * animations because they are re-measured every few frames. `data-hit="bubble"`
+ * marks what lies beside the island: pointing at it must not open the island.
  */
 export function useHitRects() {
 	useEffect(() => {
@@ -20,11 +21,15 @@ export function useHitRects() {
 			if (frame++ % 3 !== 0) return;
 			const rects = Array.from(document.querySelectorAll<HTMLElement>("[data-hit]")).map((el) => {
 				const r = el.getBoundingClientRect();
+				const bubble = el.dataset.hit === "bubble";
+				// No extra margin for bubbles: it would eat into the island beside them.
+				const pad = bubble ? 0 : PAD;
 				return {
-					x: Math.round(r.left - PAD),
-					y: Math.round(Math.max(0, r.top - PAD)),
-					width: Math.round(r.width + PAD * 2),
-					height: Math.round(r.height + PAD * 2),
+					bubble,
+					x: Math.round(r.left - pad),
+					y: Math.round(Math.max(0, r.top - pad)),
+					width: Math.round(r.width + pad * 2),
+					height: Math.round(r.height + pad * 2),
 				};
 			});
 			const key = JSON.stringify(rects);

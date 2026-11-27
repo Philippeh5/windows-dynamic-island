@@ -41,7 +41,7 @@ export const postitsModule: IslandModule = {
 				width: 340,
 			},
 			expanded: <PostitsPanel />,
-			expandedSize: { width: 600, height: 360 },
+			expandedSize: { width: 700, height: 440 },
 		};
 	},
 };

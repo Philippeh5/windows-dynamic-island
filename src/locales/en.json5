@@ -156,6 +156,8 @@
     running: "{up}/{total} services up",
   },
   tasks: {
+    notes: "Description",
+    save: "Save",
     title: "Google Tasks",
     loading: "Loading…",
     empty: "Nothing to do",
@@ -315,6 +317,10 @@
   // AI Agents module (agent-agnostic UI)
   agents: {
     poste: {
+      back: "Back",
+      next: "Next",
+      showScreen: "Show the terminal",
+      hideScreen: "Hide the terminal",
       sessions: "Sessions on the post",
       none: "No session open",
       other: "Another answer…",
@@ -869,6 +875,9 @@
   // Calendar: Google account and iCal links, shown by the clock module
   // (src-tauri/src/providers/calendar)
   calendar: {
+    viewMonth: "Month",
+    viewUpcoming: "Upcoming",
+    nothing: "Nothing coming up",
     event: {
       add: "Add event",
       title: "Title",

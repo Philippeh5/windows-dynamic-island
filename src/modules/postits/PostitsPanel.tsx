@@ -10,13 +10,14 @@ export interface Postits {
 	postits: { path: string; text: string; sujets: string[]; couleur?: string; epingle: boolean }[];
 }
 
-const COLORS: Record<string, string> = {
-	jaune: "#ffd60a",
-	rose: "#ff6482",
-	bleu: "#64a8ff",
-	vert: "#30d158",
-	violet: "#a78bfa",
-	orange: "#ff9f0a",
+/* The paper colors of the post's Notes page, with dark ink in either theme. */
+const PAPER: Record<string, string> = {
+	jaune: "#fbe58b",
+	rose: "#f7c4cf",
+	bleu: "#bfdcf2",
+	vert: "#c9e7b8",
+	orange: "#f8c99a",
+	violet: "#dccbf0",
 };
 
 export function PostitsPanel() {
@@ -71,20 +72,23 @@ export function PostitsPanel() {
 				</div>
 			</div>
 			{(failed || error) && <span className="truncate text-[11px] text-[#ff453a]">{failed || error}</span>}
-			<div className="min-h-0 flex-1 columns-2 gap-2 overflow-y-auto" data-scroll>
+			<div
+				className="grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(210px,1fr))] content-start items-start gap-3 overflow-y-auto px-1 pt-1 pb-2"
+				data-scroll
+			>
 				{data.postits.length === 0 && <Empty>{t("postits.empty")}</Empty>}
 				{data.postits.map((note) => (
 					<article
 						key={note.path}
-						className="mb-2 break-inside-avoid rounded-2xl border-l-3 bg-white/7 px-2.5 py-2 text-[12px]"
-						style={{ borderColor: COLORS[note.couleur ?? ""] ?? COLORS.jaune }}
+						className="max-h-52 overflow-y-auto rounded-[3px_3px_14px_3px] px-3 py-2.5 text-[13px]/[1.4] break-words text-[#241d12] shadow-[0_6px_12px_rgba(0,0,0,0.25)] [scrollbar-width:thin] odd:-rotate-[0.6deg] even:rotate-[0.7deg]"
+						style={{ background: PAPER[note.couleur ?? ""] ?? PAPER.jaune }}
 					>
 						{noteLines(note.text).map((line, i) =>
 							line.kind === "box" ? (
-								<label key={line.index} className="flex items-start gap-1.5">
+								<label key={line.index} className="flex cursor-pointer items-start gap-1.5">
 									<input
 										type="checkbox"
-										className="mt-0.5"
+										className="mt-0.75 accent-[#241d12] [color-scheme:light]"
 										checked={line.done}
 										disabled={!!busy}
 										onChange={async () => {
@@ -92,19 +96,23 @@ export function PostitsPanel() {
 											if (await run(note.path, "checkPostit", payload)) refresh();
 										}}
 									/>
-									<span className={cn("min-w-0 break-words", line.done && "text-text-faint line-through")}>
-										{line.text}
-									</span>
+									<span className={cn("min-w-0", line.done && "line-through opacity-60")}>{line.text}</span>
 								</label>
 							) : (
-								// biome-ignore lint/suspicious/noArrayIndexKey: lines of a text, never reordered on their own
-								<p key={`t${i}`} className={cn("break-words", line.kind === "title" && "font-bold")}>
+								<p
+									// biome-ignore lint/suspicious/noArrayIndexKey: lines of a text, never reordered on their own
+									key={`t${i}`}
+									className={cn(
+										"mb-0.5 whitespace-pre-wrap",
+										line.kind === "title" && "font-[Georgia,serif] text-[15.5px] font-bold",
+									)}
+								>
 									{line.text}
 								</p>
 							),
 						)}
 						{(note.sujets.length > 0 || note.epingle) && (
-							<span className="mt-1 block truncate text-[10.5px] text-text-faint">
+							<span className="mt-1.5 block truncate text-[11px] opacity-65">
 								{[note.epingle ? "📌" : "", ...note.sujets].filter(Boolean).join(" · ")}
 							</span>
 						)}

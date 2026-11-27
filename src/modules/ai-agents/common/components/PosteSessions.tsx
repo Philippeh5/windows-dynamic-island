@@ -54,13 +54,15 @@ function SessionDetail({ session }: { session: PosteSession }) {
 	const [busy, setBusy] = useState(false);
 	const [note, setNote] = useState("");
 	const screen = useRef<HTMLPreElement>(null);
+	// The terminal itself only on demand: a question has its own card.
+	const [showScreen, setShowScreen] = useState(false);
 	const target = { host: session.host, session: session.id, terminal: !!session.terminal };
 	const key = `${session.host}/${session.id}`;
 
 	// A terminal's screen, read again every few seconds while it is open.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: `target` is rebuilt on each render; the session is its identity
 	useEffect(() => {
-		if (!session.terminal) return;
+		if (!session.terminal || !showScreen) return;
 		let live = true;
 		const read = () =>
 			providerAction<{ lines: string[] }>(POSTE_PROVIDER, "screen", target)
@@ -72,7 +74,7 @@ function SessionDetail({ session }: { session: PosteSession }) {
 			live = false;
 			window.clearInterval(id);
 		};
-	}, [key]);
+	}, [key, showScreen]);
 	useEffect(() => {
 		if (lines && screen.current) screen.current.scrollTop = screen.current.scrollHeight;
 	}, [lines]);
@@ -96,6 +98,16 @@ function SessionDetail({ session }: { session: PosteSession }) {
 	return (
 		<div className="flex flex-col gap-1.5 px-2 pt-1 pb-1.5">
 			{session.terminal && (
+				<button
+					type="button"
+					className="self-start rounded-lg bg-white/6 px-2.5 py-1 text-[11.5px] font-[650] text-text-dim hover:bg-white/10"
+					aria-expanded={showScreen}
+					onClick={() => setShowScreen(!showScreen)}
+				>
+					{t(showScreen ? "agents.poste.hideScreen" : "agents.poste.showScreen")}
+				</button>
+			)}
+			{session.terminal && showScreen && (
 				<pre
 					ref={screen}
 					className="max-h-32 overflow-auto rounded-lg bg-white/5 p-2 font-mono text-[10.5px]/snug whitespace-pre-wrap text-text-dim"

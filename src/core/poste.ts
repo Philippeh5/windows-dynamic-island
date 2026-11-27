@@ -28,6 +28,8 @@ export interface PosteEvent {
 }
 
 export interface PosteTask {
+	/** The task's description. */
+	notes?: string;
 	id: string;
 	title: string;
 	/** `YYYY-MM-DD`. */

@@ -153,6 +153,10 @@ pub struct HitRect {
     pub y: f64,
     pub width: f64,
     pub height: f64,
+    /// A bubble beside the island, or its card: it takes the cursor without
+    /// counting as "over the island", which would open it.
+    #[serde(default)]
+    pub bubble: bool,
 }
 
 #[derive(Default)]
@@ -185,6 +189,8 @@ pub fn spawn_hit_test(app: AppHandle) {
     std::thread::spawn(move || {
         let mut ignoring: Option<bool> = None;
         let mut hovering = false;
+        // Over the island itself, bubbles apart: what opens and closes it.
+        let mut over_shell = false;
         let mut fullscreen = false;
         let mut hide_in_fullscreen = true;
         let mut was_interactive = true;
@@ -230,7 +236,7 @@ pub fn spawn_hit_test(app: AppHandle) {
             }
 
             let dragging = app.state::<DragState>().0.load(Ordering::Relaxed);
-            let over_island = cursor_inside(&app, &win, 0.0);
+            let over_island = cursor_inside(&app, &win, 0.0, true);
             let inside = island_interactive && (dragging || over_island);
 
             // A drag that started in another app (files from Explorer…). The
@@ -249,7 +255,7 @@ pub fn spawn_hit_test(app: AppHandle) {
             let drop_zone = island_interactive
                 && down
                 && !pressed_inside
-                && cursor_inside(&app, &win, DROP_MARGIN);
+                && cursor_inside(&app, &win, DROP_MARGIN, true);
             let dragging_in = down && !pressed_inside && (file_drag || drop_zone);
             if dragging_in != file_drag {
                 file_drag = dragging_in;
@@ -263,7 +269,13 @@ pub fn spawn_hit_test(app: AppHandle) {
             if inside != hovering {
                 hovering = inside;
                 HOVERING.store(inside, Ordering::Relaxed);
-                let _ = app.emit(HOVER_EVENT, inside);
+            }
+            let shell = island_interactive
+                && (dragging
+                    || (cursor_inside(&app, &win, 0.0, false) && !cursor_over_bubble(&app, &win)));
+            if shell != over_shell {
+                over_shell = shell;
+                let _ = app.emit(HOVER_EVENT, shell);
             }
         }
     });
@@ -283,8 +295,23 @@ fn left_button_down() -> bool {
     false
 }
 
-/// Cursor over one of the frontend's rects, grown by `margin` CSS px.
-fn cursor_inside(app: &AppHandle, win: &WebviewWindow, margin: f64) -> bool {
+/// Cursor over one of the frontend's rects, grown by `margin` CSS px; bubbles
+/// count only with `bubbles`.
+fn cursor_inside(app: &AppHandle, win: &WebviewWindow, margin: f64, bubbles: bool) -> bool {
+    cursor_over(app, win, margin, |r| bubbles || !r.bubble)
+}
+
+/// Cursor over a bubble or its card (which may lie over the island's rect).
+fn cursor_over_bubble(app: &AppHandle, win: &WebviewWindow) -> bool {
+    cursor_over(app, win, 0.0, |r| r.bubble)
+}
+
+fn cursor_over(
+    app: &AppHandle,
+    win: &WebviewWindow,
+    margin: f64,
+    wanted: impl Fn(&HitRect) -> bool,
+) -> bool {
     let Some((cx, cy)) = cursor_pos() else {
         return false;
     };
@@ -293,7 +320,7 @@ fn cursor_inside(app: &AppHandle, win: &WebviewWindow, margin: f64) -> bool {
     };
     let rects = app.state::<HitState>();
     let rects = rects.0.lock().unwrap();
-    rects.iter().any(|r| {
+    rects.iter().filter(|r| wanted(r)).any(|r| {
         let left = origin.x as f64 + (r.x - margin) * scale;
         let top = origin.y as f64 + (r.y - margin).max(0.0) * scale;
         let right = origin.x as f64 + (r.x + r.width + margin) * scale;

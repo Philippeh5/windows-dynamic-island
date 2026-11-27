@@ -143,6 +143,8 @@
     running: "{up}/{total} serviços ativos",
   },
   tasks: {
+    notes: "Descrição",
+    save: "Salvar",
     title: "Google Tarefas",
     loading: "Carregando…",
     empty: "Nada a fazer",
@@ -297,6 +299,10 @@
   // Módulo AI Agents
   agents: {
     poste: {
+      back: "Voltar",
+      next: "Próxima",
+      showScreen: "Mostrar o terminal",
+      hideScreen: "Ocultar o terminal",
       sessions: "Sessões no posto",
       none: "Nenhuma sessão aberta",
       other: "Outra resposta…",
@@ -805,6 +811,9 @@
   },
 
   calendar: {
+    viewMonth: "Mês",
+    viewUpcoming: "Próximos",
+    nothing: "Nada por vir",
     event: {
       add: "Novo evento",
       title: "Título",

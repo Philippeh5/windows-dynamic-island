@@ -39,6 +39,21 @@ export function formatIn(t: Translate, ms: number, now = Date.now()) {
 }
 
 /** Re-renders every `interval` ms while `enabled`. */
+export function useClock() {
+	const [now, setNow] = useState(() => Date.now());
+	useEffect(() => {
+		// Looked at every second, but re-rendered only when the minute shown changes.
+		const t = window.setInterval(() => {
+			setNow((last) => {
+				const next = Date.now();
+				return Math.floor(next / 60_000) === Math.floor(last / 60_000) ? last : next;
+			});
+		}, 1000);
+		return () => window.clearInterval(t);
+	}, []);
+	return now;
+}
+
 export function useNow(interval = 1000, enabled = true) {
 	const [now, setNow] = useState(() => Date.now());
 	useEffect(() => {

@@ -7,6 +7,7 @@ import { MusicIcon } from "lucide-react";
 import { useSetting } from "../../core/settings";
 import type { IslandModule, ModuleView } from "../../core/types";
 import { Artwork } from "./components/Artwork";
+import { MiniPlayer } from "./components/MiniPlayer";
 import { MusicCompactLeft, MusicCompactRight } from "./components/MusicCompact";
 import { MusicPanel } from "./components/MusicPanel";
 import { SpotifySettings } from "./components/SpotifySettings";
@@ -37,6 +38,7 @@ export const musicModule: IslandModule = {
 				right: <MusicCompactRight music={music} accent={accent} showVisualizer={showVisualizer} />,
 				width: 340,
 			},
+			peek: music && { node: <MiniPlayer music={music} />, width: 300 },
 			expanded: <MusicPanel music={music} accent={accent} showVisualizer={showVisualizer} />,
 			expandedSize: { width: 560, height: 176 },
 			activityKey: autoExpand && music?.playing ? `${music.title}|${music.artist}` : undefined,
