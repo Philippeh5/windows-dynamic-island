@@ -6,6 +6,7 @@ import { POSTE_PROVIDER, type PosteState } from "../../core/poste";
 import type { IslandModule, ModuleView } from "../../core/types";
 import { useCachedPage } from "../../core/usePostePage";
 import { noteLines } from "./checklist";
+import { plain } from "./inline";
 import { type Postits, PostitsPanel } from "./PostitsPanel";
 
 const YELLOW = "#ffd60a";
@@ -30,7 +31,9 @@ export const postitsModule: IslandModule = {
 				left: (
 					<span className="flex min-w-0 items-center gap-2 pl-1">
 						<StickyNoteIcon size={14} color={YELLOW} />
-						<span className="max-w-60 truncate text-[13px] font-semibold">{todo[0]?.text ?? t("postits.title")}</span>
+						<span className="max-w-60 truncate text-[13px] font-semibold">
+							{todo[0] ? plain(todo[0].text) : t("postits.title")}
+						</span>
 					</span>
 				),
 				right: todo.length ? (
@@ -41,7 +44,7 @@ export const postitsModule: IslandModule = {
 				width: 340,
 			},
 			expanded: <PostitsPanel />,
-			expandedSize: { width: 700, height: 440 },
+			expandedSize: { width: 720, height: 480 },
 		};
 	},
 };

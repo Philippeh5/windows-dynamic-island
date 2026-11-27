@@ -21,9 +21,7 @@ export function Upcoming({
 			{days.length === 0 && <p className="px-2 py-1 text-[12px] text-text-faint">{t("calendar.nothing")}</p>}
 			{days.map(({ day, events }) => (
 				<section key={day} className="mb-2">
-					<h3 className="mb-1 font-[Georgia,serif] text-[14px] font-bold first-letter:uppercase">
-						{dayName.format(day)}
-					</h3>
+					<h3 className="mb-1 text-[12.5px] font-[650] text-text-dim first-letter:uppercase">{dayName.format(day)}</h3>
 					<ul className="flex list-none flex-col gap-0.75">
 						{events.map((e) => (
 							<li key={e.id}>

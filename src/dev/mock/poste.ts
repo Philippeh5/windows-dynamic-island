@@ -72,7 +72,8 @@ let flowOn = true;
 function page({ what }: { what: string }) {
 	if (what === "hermes") return { available: true, busy: false, error: null, messages: [...thread] };
 	if (what === "postits") {
-		const text = "# Boutique\n- [ ] Check the payment page\n- [x] Logo";
+		const text =
+			"# Boutique\n- [ ] Check the payment page\n- [x] Logo\n- [ ] **Course** [Options 101](https://example.test/a/very/long/address?x=1) · *free*";
 		return { postits: [{ path: "a.md", text, sujets: ["boutique"], couleur: "jaune", epingle: true }] };
 	}
 	if (what === "workflows") {
