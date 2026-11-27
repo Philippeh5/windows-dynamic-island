@@ -589,6 +589,12 @@
       left: "Left",
       right: "Right",
     },
+    theme: {
+      label: "Theme",
+      desc: "Colors of the island.",
+      dark: "Dark",
+      light: "Light",
+    },
     tabsPosition: {
       label: "Module switcher position",
       desc: "Choose where the module icons appear in the expanded island.",

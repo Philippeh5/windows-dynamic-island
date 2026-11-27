@@ -82,6 +82,28 @@
 	-webkit-font-smoothing: antialiased;
 }
 
+/* Light theme, on the island window only. The pages draw with translucent "white" over the island: here that ink
+   turns dark, and "black" (the text on white buttons, the cards behind them) turns white. */
+:root[data-theme="light"] {
+	--color-white: #1c1c1e;
+	--color-black: #fff;
+	--color-warn: #a86500;
+	--island: #f6f6f8;
+	--text: #1c1c1e;
+	--text-dim: rgba(28, 28, 30, 0.66);
+	--text-faint: rgba(28, 28, 30, 0.48);
+	--hairline: rgba(0, 0, 0, 0.1);
+	--card: rgba(0, 0, 0, 0.045);
+}
+:root[data-theme="light"] :is(input, select, textarea) {
+	color-scheme: light;
+}
+
+/* Dimmed tab icons wash out on a light background. */
+:root[data-theme="light"] [data-tab-bar] button {
+	opacity: 1;
+}
+
 /* Resets live in `base`, so component and utility classes override them. */
 @layer base {
 	* {

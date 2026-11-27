@@ -585,6 +585,12 @@
       left: "左侧",
       right: "右侧",
     },
+    theme: {
+      label: "主题",
+      desc: "灵动岛的配色。",
+      dark: "深色",
+      light: "浅色",
+    },
     tabsPosition: {
       label: "模块切换图标位置",
       desc: "选择展开的灵动岛中模块图标的显示位置。",

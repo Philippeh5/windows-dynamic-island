@@ -7,7 +7,7 @@ import { useSyncLocale } from "../core/i18n";
 import { type IslandApi, IslandContext } from "../core/island";
 import { isSide } from "../core/placement";
 import { setIslandControls } from "../core/plugins/host";
-import { useSetting, zoomSetting } from "../core/settings";
+import { appearanceSettings, useSetting, zoomSetting } from "../core/settings";
 import { useGlass } from "../core/useGlass";
 import { useHitRects } from "../core/useHitRects";
 import { useIslandController } from "../core/useIslandController";
@@ -33,6 +33,13 @@ export function Island() {
 	const { mode, secondary, focused } = ctl;
 	const saved = useAppearance();
 	const light = statusLight(ctl.entries);
+	const theme = useSetting(appearanceSettings.theme);
+	useEffect(() => {
+		document.documentElement.dataset.theme = theme;
+		return () => {
+			delete document.documentElement.dataset.theme;
+		};
+	}, [theme]);
 	const look = light ? { ...saved, rim: [light.color, light.color], animate: false, glow: true } : saved;
 	const windows = look.style === "windows";
 	const v = variantOf(look);

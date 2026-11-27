@@ -150,7 +150,7 @@ export function Tabs({
 	}, [target]);
 
 	return (
-		<div ref={barRef} className={s.base()}>
+		<div data-tab-bar ref={barRef} className={s.base()}>
 			<div
 				ref={clipRef}
 				className={s.clip()}

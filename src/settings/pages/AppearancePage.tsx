@@ -167,6 +167,16 @@ export function AppearancePage({ values }: { values: Record<string, unknown> }) 
 					/>
 				</Row>
 				<ToggleRow def={appearanceSettings.idleClock} value={readSetting(values, appearanceSettings.idleClock)} />
+				<Row label={t("appearance.theme.label")} desc={t("appearance.theme.desc")}>
+					<Segmented
+						options={[
+							{ value: "dark", label: t("appearance.theme.dark") },
+							{ value: "light", label: t("appearance.theme.light") },
+						]}
+						value={readSetting(values, appearanceSettings.theme)}
+						onChange={(value) => setSetting(appearanceSettings.theme, value)}
+					/>
+				</Row>
 				<Row
 					label={t("appearance.tabsPosition.label")}
 					desc={windows ? t("appearance.tabsPosition.desc") : t("appearance.windowsOnly")}

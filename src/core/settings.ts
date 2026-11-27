@@ -265,6 +265,12 @@ export const appearanceSettings = {
 		description: "appearance.tabsPosition.desc",
 		default: "top" as "top" | "bottom",
 	} as SettingDef<"top" | "bottom">,
+	theme: {
+		key: "appearance.theme",
+		label: "appearance.theme.label",
+		description: "appearance.theme.desc",
+		default: "dark" as "dark" | "light",
+	} as SettingDef<"dark" | "light">,
 	/** A preset id from `core/appearance.ts`, "none" (classic hairline) or "custom". */
 	border: {
 		key: "appearance.border",
