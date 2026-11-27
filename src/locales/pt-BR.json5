@@ -248,6 +248,18 @@
 
   // Módulo AI Agents
   agents: {
+    poste: {
+      sessions: "Sessões no posto",
+      none: "Nenhuma sessão aberta",
+      other: "Outra resposta…",
+      send: "Enviar",
+      incomplete: "Responda a cada pergunta",
+      confirm: "Confirmar?",
+      onPost: "Autorize pelo posto",
+      message: "Mensagem para a sessão…",
+      sent: "Enviado",
+      asks: "Um agente pergunta",
+    },
     sessionCount: "{n} em andamento",
     title: "AI Agents",
     approveInIsland: {

@@ -94,13 +94,15 @@ export function useIslandHover({ expandOnHover, collapseOnLeave, onOpen, onClose
 	const keepOpen = useCallback(
 		(on: boolean, reason = "default") => {
 			if (on) holds.current.add(reason);
-			else holds.current.delete(reason);
+			// Releasing what was never held changes nothing (a view going away must not open the island).
+			else if (!holds.current.delete(reason)) return;
 			if (holds.current.size > 0) window.clearTimeout(timer.current);
 			else if (!pointerInside.current) {
 				if (latest.current.collapseOnLeave) transition(false);
 			}
 			// Once the icon's double-click hold ends, resume hover where the pointer is.
-			else if (!openRef.current && latest.current.expandOnHover) transition(true);
+			// Typing in a bubble's card must not end with the whole island opening.
+			else if (!openRef.current && !overBubble.current && latest.current.expandOnHover) transition(true);
 		},
 		[transition],
 	);

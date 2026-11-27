@@ -23,7 +23,7 @@ use crate::settings::{self, Settings};
 pub const ID: &str = "poste";
 const TOKEN_TARGET: &str = "dynamic-island:poste";
 const URL_KEY: &str = "poste.url";
-const STATE_EVERY: Duration = Duration::from_secs(12);
+const STATE_EVERY: Duration = Duration::from_secs(5);
 const AGENDA_EVERY_MS: u64 = 60_000;
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]
@@ -38,6 +38,9 @@ struct State {
     /// The user's own to-do lists (Google Tasks).
     task_lists: Value,
     tasks_error: Option<String>,
+    /// Questions and permissions waiting for an answer, and the open sessions.
+    approvals: Value,
+    sessions: Value,
 }
 
 #[derive(Default)]
@@ -149,6 +152,20 @@ fn task_path(payload: &Value) -> Result<String, String> {
     ))
 }
 
+/// A session is either one of the daemon's agents or a terminal.
+fn session_path(payload: &Value) -> Result<String, String> {
+    let kind = if payload["terminal"] == true {
+        "terminals"
+    } else {
+        "sessions"
+    };
+    Ok(format!(
+        "/v1/{kind}/{}/{}",
+        event_id(&payload["host"])?,
+        event_id(&payload["session"])?
+    ))
+}
+
 impl Provider for PosteProvider {
     fn id(&self) -> &'static str {
         ID
@@ -166,11 +183,13 @@ impl Provider for PosteProvider {
                 state.configured =
                     saved_url(&hub).is_some() && credentials::read(TOKEN_TARGET).is_some();
                 if state.configured {
-                    match request(&hub, "GET", "/v1/state", None) {
+                    match request(&hub, "GET", "/v1/state?questions=1", None) {
                         Ok(data) => {
                             state.connected = true;
                             state.quotas = data["quotas"].clone();
                             state.announces = data["announces"].clone();
+                            state.approvals = data["approvals"].clone();
+                            state.sessions = data["sessions"].clone();
                         }
                         Err(e) => {
                             log::debug!("poste: {e}");
@@ -240,9 +259,26 @@ impl Provider for PosteProvider {
                 let path = format!("{}/delete", task_path(&payload)?);
                 request(&hub, "POST", &path, Some(&json!({ "confirm": true })))
             }
+            "answer" => {
+                let path = format!("/v1/approvals/{}", event_id(&payload["id"])?);
+                let body = json!({
+                    "answers": payload["answers"],
+                    "decision": payload["decision"],
+                    "confirm": payload["confirm"],
+                });
+                request(&hub, "POST", &path, Some(&body))
+            }
+            "send" => {
+                let path = format!("{}/send", session_path(&payload)?);
+                request(&hub, "POST", &path, Some(&json!({ "text": payload["text"] })))
+            }
+            // The screen of a session open in a terminal.
+            "screen" => request(&hub, "GET", &session_path(&payload)?, None),
             _ => Err(format!("poste: unsupported action '{action}'")),
         };
-        if let Some(wake) = self.wake.lock().unwrap().as_ref() {
+        if action != "screen"
+            && let Some(wake) = self.wake.lock().unwrap().as_ref()
+        {
             let _ = wake.send(());
         }
         result

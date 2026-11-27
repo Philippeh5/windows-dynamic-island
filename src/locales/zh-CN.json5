@@ -262,6 +262,18 @@
 
   // AI 智能体模块
   agents: {
+    poste: {
+      sessions: "远程会话",
+      none: "没有打开的会话",
+      other: "其他回答…",
+      send: "发送",
+      incomplete: "请回答每个问题",
+      confirm: "确认？",
+      onPost: "请在控制台授权",
+      message: "发送给该会话…",
+      sent: "已发送",
+      asks: "代理提问",
+    },
     sessionCount: "{n} 个进行中",
     title: "AI 智能体",
     approveInIsland: {

@@ -40,6 +40,7 @@ export function Satellites({
 	const t = useT();
 	const [open, setOpen] = useState<string | null>(null);
 	const timer = useRef<number | undefined>(undefined);
+	const card = useRef<HTMLDivElement>(null);
 	const hover = useRef(onHover);
 	hover.current = onHover;
 
@@ -50,6 +51,8 @@ export function Satellites({
 	};
 	const leave = () => {
 		window.clearTimeout(timer.current);
+		// Typing in the card: it stays, wherever the pointer goes.
+		if (card.current?.contains(document.activeElement) && document.activeElement?.tagName === "INPUT") return;
 		// Told at once, so moving onto the island opens it; the card lingers a little.
 		hover.current(false);
 		timer.current = window.setTimeout(() => setOpen(null), LEAVE_MS);
@@ -85,6 +88,11 @@ export function Satellites({
 						data-no-drag
 						onPointerEnter={() => enter(module.id)}
 						onPointerLeave={leave}
+						onBlur={(e) => {
+							// Done typing, elsewhere: the card closes like after a pointer leaving.
+							const box = e.currentTarget;
+							if (!box.contains(e.relatedTarget) && !box.matches(":hover")) setOpen(null);
+						}}
 						onClick={(e) => e.stopPropagation()}
 						onKeyDown={(e) => e.stopPropagation()}
 					>
@@ -112,6 +120,7 @@ export function Satellites({
 						{open === module.id && (
 							// The padding bridges the gap, so the pointer can travel onto the card.
 							<div
+								ref={card}
 								data-hit
 								className={cn(
 									"absolute z-10",

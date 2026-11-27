@@ -24,6 +24,8 @@ import { AgentCompactLeft, AgentCompactRight } from "./common/components/AgentCo
 import { AgentsPanel } from "./common/components/AgentsPanel";
 import { AgentsSettings } from "./common/components/AgentsSettings";
 import { PermissionPrompt } from "./common/components/PermissionPrompt";
+import { PosteQuestion } from "./common/components/PosteQuestion";
+import { PosteSessions } from "./common/components/PosteSessions";
 import { StatusGlyph } from "./common/components/StatusGlyph";
 import { useNow } from "./common/format";
 import { pickPrimary } from "./common/primary";
@@ -41,6 +43,8 @@ const USAGE_CHART = 74;
 const PERMISSION_PROMPT = 196;
 /** The agent tabs, when more than one agent is installed. */
 const AGENT_TABS = 34;
+/** The tallest this page gets. */
+const MAX_HEIGHT = 640;
 
 const RANK: Record<AgentStatus, number> = { waiting: 0, limitsReset: 1, working: 2, done: 3, idle: 4 };
 const PRIORITY: Record<AgentStatus, number> = { waiting: 90, limitsReset: 80, done: 70, working: 60, idle: 0 };
@@ -106,21 +110,52 @@ export const aiAgentsModule: IslandModule = {
 			.slice(0, 4);
 
 		const primary = pickPrimary(visible, snapshots);
+		// Questions and sessions of the post, where the agents run.
+		const approvals = poste?.approvals ?? [];
+		const remote = poste?.sessions ?? [];
+		const question = approvals[0];
+		const posteHeight =
+			(question ? 200 + question.questions.length * 70 : 0) + (poste?.configured ? 40 + remote.length * 30 : 0);
 		const asking = sessions.some((s) => s.session.permission && s.agent.decide);
+		// The room the local agents need, without the island's own header.
+		const usageHeight = asking
+			? PERMISSION_PROMPT - 64 + Math.max(1, recent.length) * 30
+			: 172 +
+				Math.max(1, recent.length) * 30 +
+				(snapshots.some((s) => s.usage?.daily.length) ? USAGE_CHART : 0) +
+				(visible.length > 1 ? AGENT_TABS : 0);
 
 		return {
-			active: !!hot,
-			priority: hot ? PRIORITY[hot.session.status] : 0,
+			active: !!hot || !!question,
+			priority: question ? PRIORITY.waiting : hot ? PRIORITY[hot.session.status] : 0,
 			// A permission to answer: opening the island goes straight to it.
-			attention: asking,
+			attention: asking || !!question,
 			icon: <StatusGlyph agent={hot?.agent ?? primary} status={hot?.session.status ?? "idle"} size={18} />,
-			compact: hot && {
-				left: <AgentCompactLeft hot={hot} busyCount={busyCount} />,
-				right: <AgentCompactRight hot={hot} />,
-				width: 340,
-			},
+			compact: question
+				? {
+						left: (
+							<span className="pl-2 text-[13px] font-[650] whitespace-nowrap text-[#ff9f0a]">
+								{t("agents.poste.asks")}
+							</span>
+						),
+						right: <span className="max-w-40 truncate text-[12px] font-bold text-text-dim">{question.title}</span>,
+						width: 340,
+					}
+				: hot && {
+						left: <AgentCompactLeft hot={hot} busyCount={busyCount} />,
+						right: <AgentCompactRight hot={hot} />,
+						width: 340,
+					},
 			// A question or a permission waiting: answered from its bubble.
-			alert: asking ? { color: "#ff9f0a", width: 480, node: <AskingCard sessions={sessions} now={now} /> } : undefined,
+			alert: question
+				? {
+						color: "#ff9f0a",
+						width: 480,
+						node: <PosteQuestion key={question.id} item={question} more={approvals.length - 1} />,
+					}
+				: asking
+					? { color: "#ff9f0a", width: 480, node: <AskingCard sessions={sessions} now={now} /> }
+					: undefined,
 			summary: {
 				left: (
 					<span className="flex items-center gap-2 pl-2 text-[13px] font-semibold whitespace-nowrap">
@@ -135,17 +170,25 @@ export const aiAgentsModule: IslandModule = {
 				),
 				width: 340,
 			},
-			expanded: <AgentsPanel agents={visible} snapshots={snapshots} sessions={recent} />,
-			expandedSize: asking
-				? { width: 620, height: PERMISSION_PROMPT + Math.max(1, recent.length) * 30 }
-				: {
-						width: 620,
-						height:
-							236 +
-							Math.max(1, recent.length) * 30 +
-							(snapshots.some((s) => s.usage?.daily.length) ? USAGE_CHART : 0) +
-							(visible.length > 1 ? AGENT_TABS : 0),
-					},
+			expanded: (
+				<div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto [scrollbar-width:none]" data-scroll>
+					{question && (
+						<div className="flex-none">
+							<PosteQuestion key={question.id} item={question} more={approvals.length - 1} />
+						</div>
+					)}
+					{poste?.configured && (
+						<div className="flex-none">
+							<PosteSessions sessions={remote} />
+						</div>
+					)}
+					<div className="flex-none" style={{ height: usageHeight }}>
+						<AgentsPanel agents={visible} snapshots={snapshots} sessions={recent} />
+					</div>
+				</div>
+			),
+			// Past this, the page scrolls.
+			expandedSize: { width: 620, height: Math.min(MAX_HEIGHT, usageHeight + 64 + posteHeight) },
 			// Peek when an agent needs you, just finished or its limits reset (each is a setting).
 			activityKey:
 				hot && peekOn[hot.session.status]

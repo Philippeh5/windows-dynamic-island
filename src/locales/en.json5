@@ -266,6 +266,18 @@
 
   // AI Agents module (agent-agnostic UI)
   agents: {
+    poste: {
+      sessions: "Sessions on the post",
+      none: "No session open",
+      other: "Another answer…",
+      send: "Send",
+      incomplete: "Pick an answer for each question",
+      confirm: "Confirm?",
+      onPost: "Allow from the post",
+      message: "Message to this session…",
+      sent: "Sent",
+      asks: "An agent asks",
+    },
     sessionCount: "{n} running",
     title: "AI Agents",
     approveInIsland: {

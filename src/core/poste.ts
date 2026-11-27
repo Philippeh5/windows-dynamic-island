@@ -40,6 +40,35 @@ export interface PosteTaskList {
 	tasks: PosteTask[];
 }
 
+export interface PosteQuestion {
+	question: string;
+	multiSelect: boolean;
+	options: { label: string; description: string }[];
+}
+
+/** A question or a permission an agent waits on. */
+export interface PosteApproval {
+	id: string;
+	title: string;
+	/** What the agent wrote before asking. */
+	body: string;
+	danger: boolean;
+	/** Only the post itself may allow this one. */
+	refuseOnly: boolean;
+	questions: PosteQuestion[];
+}
+
+export interface PosteSession {
+	host: string;
+	id: string;
+	title: string;
+	/** `active`, `waiting`, `idle`, `error`… */
+	group: string;
+	status: string;
+	terminal?: boolean;
+	detail?: string;
+}
+
 export interface PosteState {
 	configured: boolean;
 	connected: boolean;
@@ -50,4 +79,6 @@ export interface PosteState {
 	/** The user's own to-do lists (Google Tasks). */
 	taskLists?: PosteTaskList[] | null;
 	tasksError?: string | null;
+	approvals?: PosteApproval[] | null;
+	sessions?: PosteSession[] | null;
 }

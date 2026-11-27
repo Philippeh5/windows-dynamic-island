@@ -25,6 +25,19 @@ const state = provider<PosteState>(POSTE_PROVIDER, {
 	announces: [],
 	events: [{ id: "ev1", title: "Dentiste", start: inDays(14, 10), end: null }],
 	agendaError: null,
+	approvals: [],
+	sessions: [
+		{
+			host: "oracle",
+			id: "t1",
+			title: "claude · boutique",
+			group: "waiting",
+			status: "waiting",
+			terminal: true,
+			detail: "Which database?",
+		},
+		{ host: "oracle", id: "a1", title: "codex · site", group: "active", status: "running" },
+	],
 	taskLists: [
 		{
 			id: "L1",
@@ -53,6 +66,41 @@ export const poste = defineMock({
 	controls: [
 		{
 			kind: "button",
+			label: "New question",
+			run: () =>
+				state.set((s) => ({
+					...s,
+					approvals: [
+						{
+							id: "q_1",
+							title: "Claude · boutique",
+							body: "Two choices before I continue.",
+							danger: false,
+							refuseOnly: false,
+							questions: [
+								{
+									question: "Which database?",
+									multiSelect: false,
+									options: [
+										{ label: "SQLite", description: "one file" },
+										{ label: "Postgres", description: "server" },
+									],
+								},
+								{
+									question: "What next?",
+									multiSelect: true,
+									options: [
+										{ label: "Tests", description: "" },
+										{ label: "Docs", description: "" },
+									],
+								},
+							],
+						},
+					],
+				})),
+		},
+		{
+			kind: "button",
 			label: "New announcement",
 			run: () => {
 				count += 1;
@@ -79,6 +127,9 @@ export const poste = defineMock({
 			},
 			completeTask: (payload) => drop(payload),
 			deleteTask: (payload) => drop(payload),
+			answer: () => state.set((s) => ({ ...s, approvals: (s.approvals ?? []).slice(1) })),
+			send: () => ({ sent: true }),
+			screen: () => ({ lines: ["⏺ Done.", "> "] }),
 			saveEvent: (payload) => {
 				const p = payload as { id: string | null; title: string; start: string };
 				const event: PosteEvent = { id: p.id ?? `ev${Date.now()}`, title: p.title, start: p.start, end: null };
