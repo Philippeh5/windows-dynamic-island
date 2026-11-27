@@ -144,6 +144,51 @@ fn apply(win: &WebviewWindow, monitor: &Monitor) -> tauri::Result<()> {
     win.set_size(size)
 }
 
+/// Where the island was let go, when that is on another monitor.
+#[derive(serde::Serialize)]
+pub struct Dropped {
+    /// The new value of [`MONITOR_KEY`].
+    monitor: String,
+    /// The cursor and the window's size there, in CSS px.
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+}
+
+/// Called when a drag ends: with the cursor on another monitor, the window
+/// moves there. The caller saves the monitor and places the island.
+#[tauri::command]
+pub fn drop_island(app: AppHandle) -> Option<Dropped> {
+    let win = app.get_webview_window(ISLAND_LABEL)?;
+    let cursor = app.cursor_position().ok()?;
+    let here = win.outer_position().ok()?;
+    let found = screens(&win).into_iter().find(|s| {
+        let (p, size) = (s.monitor.position(), s.monitor.size());
+        cursor.x >= f64::from(p.x)
+            && cursor.x < f64::from(p.x) + f64::from(size.width)
+            && cursor.y >= f64::from(p.y)
+            && cursor.y < f64::from(p.y) + f64::from(size.height)
+    })?;
+    let (position, size) = strip_rect(&found.monitor);
+    if position == here {
+        return None;
+    }
+    apply(&win, &found.monitor).ok()?;
+    let scale = found.monitor.scale_factor();
+    Some(Dropped {
+        monitor: if found.primary {
+            PRIMARY.to_string()
+        } else {
+            found.id
+        },
+        x: (cursor.x - f64::from(position.x)) / scale,
+        y: (cursor.y - f64::from(position.y)) / scale,
+        width: f64::from(size.width) / scale,
+        height: f64::from(size.height) / scale,
+    })
+}
+
 /// Put the island on its monitor now (startup, tray "Recenter").
 pub fn place(win: &WebviewWindow) -> tauri::Result<()> {
     match target(win.app_handle(), win) {

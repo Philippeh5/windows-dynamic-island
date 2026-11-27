@@ -15,7 +15,7 @@ export function PosteSessions({ sessions }: { sessions: PosteSession[] }) {
 	const chosen = sessions.find((s) => s.id === open);
 
 	return (
-		<div className="flex min-w-0 flex-col gap-1" data-no-drag onClick={(e) => e.stopPropagation()}>
+		<div className="flex min-w-0 flex-col gap-1" onClick={(e) => e.stopPropagation()}>
 			<SectionLabel>{t("agents.poste.sessions")}</SectionLabel>
 			{sessions.length === 0 && <span className="px-2 text-[12px] text-text-faint">{t("agents.poste.none")}</span>}
 			<ul className="flex list-none flex-col gap-0.5">

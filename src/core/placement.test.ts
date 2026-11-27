@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { defaultFree, dockAt, EDGE_MARGIN, freeAt, place } from "./placement";
+import { defaultFree, dockAt, EDGE_MARGIN, freeAt, place, snapToWalls } from "./placement";
 
 const stage = { width: 1920, height: 1040 };
 const pill = { width: 265, height: 38 };
@@ -51,8 +51,23 @@ describe("free", () => {
 
 	test("never leaves the screen", () => {
 		const at = place(freeAt({ x: 5000, y: -50 }, stage), open, stage);
-		expect(at.x).toBe(1920 - 720 - EDGE_MARGIN);
+		expect(at.x).toBe(1920 - 720);
 		expect(at.y).toBe(0);
+	});
+
+	test("near a wall it sticks to it, whatever the page's size", () => {
+		const box = { left: 10, top: 1000, ...pill };
+		const spot = snapToWalls(freeAt({ x: 142, y: 1019 }, stage), box, stage);
+		expect(spot).toEqual({ kind: "free", x: 0, y: 1 });
+		expect(place(spot, open, stage)).toEqual({ x: 0, y: 1040 - 466 });
+		expect(place(spot, pill, stage)).toEqual({ x: 0, y: 1040 - 38 });
+	});
+
+	test("away from the walls nothing changes", () => {
+		const spot = freeAt({ x: 700, y: 400 }, stage);
+		expect(snapToWalls(spot, { left: 567, top: 381, ...pill }, stage)).toEqual(spot);
+		const margin = freeAt({ x: 1920 - 200, y: 400 }, stage);
+		expect(Math.round(place(margin, open, stage).x)).toBe(1920 - 720 - EDGE_MARGIN);
 	});
 
 	test("the default is the old spot at the top", () => {

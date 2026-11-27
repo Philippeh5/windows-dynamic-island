@@ -114,6 +114,7 @@ pub fn run() {
             window::focus_island,
             window::restore_focus,
             display::list_monitors,
+            display::drop_island,
             settings::get_settings,
             settings::set_setting,
             settings::open_settings,

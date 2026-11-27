@@ -1,17 +1,37 @@
 import { useMotionValue, useMotionValueEvent, useSpring, useTransform, useVelocity } from "motion/react";
 import { type MouseEvent, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { command, useTauriEvent } from "./bridge";
-import { defaultFree, dockAt, type Extras, freeAt, isEdge, type Placement, place, REST_HALF } from "./placement";
+import {
+	defaultFree,
+	dockAt,
+	type Extras,
+	freeAt,
+	isEdge,
+	type Placement,
+	place,
+	REST_HALF,
+	snapToWalls,
+} from "./placement";
 import {
 	ISLAND_EDGE_KEY,
 	ISLAND_FREE_KEY,
 	ISLAND_OFFSET_KEY,
+	monitorSettings,
 	positionSettings,
 	readSetting,
 	setSetting,
 	useSettings,
 	type Values,
 } from "./settings";
+
+/** Answer of `drop_island` (`display.rs`): the drag ended on another screen. */
+interface Dropped {
+	monitor: string;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+}
 
 /** Pixels the pointer must travel before a press becomes a drag (not a click). */
 const DRAG_THRESHOLD = 5;
@@ -273,11 +293,38 @@ export function useIslandDrag({ free, growUp, width, height, extras, canReturn, 
 				// Kept by the edge that holds the tabs, so they stay where they were dropped.
 				let anchorY = growUp ? top + size.height - REST_HALF : top + REST_HALF;
 				if (size.height <= REST_HALF * 3) anchorY = top + size.height / 2;
+				const at = { x: last.x + speed.x * FLING, y: last.y + speed.y * FLING };
+				// A wall is reached by the island's side, or by the resting pill above and below (an open page
+				// is tall: it would nearly always touch the bottom).
 				const next = free
-					? freeAt({ x: left + size.width / 2, y: anchorY }, stage.get())
-					: dockAt({ x: last.x + speed.x * FLING, y: last.y + speed.y * FLING }, stage.get());
-				goTo(next);
-				save(next);
+					? snapToWalls(
+							freeAt({ x: left + size.width / 2, y: anchorY }, stage.get()),
+							{ left, width: size.width, top: anchorY - REST_HALF, height: REST_HALF * 2 },
+							stage.get(),
+						)
+					: dockAt(at, stage.get());
+				const settleAt = (spot: Placement) => {
+					goTo(spot);
+					save(spot);
+				};
+				// Let go over another screen, the island moves there.
+				const held = { x: grab.x, y: grab.y };
+				command<Dropped | null>("drop_island")
+					.then((there) => {
+						if (!there) return settleAt(next);
+						setSetting(monitorSettings.monitor, there.monitor);
+						const room = { width: there.width, height: there.height };
+						stage.set(room);
+						const pill = {
+							left: there.x - held.x,
+							width: size.width,
+							top: there.y - REST_HALF,
+							height: REST_HALF * 2,
+						};
+						const middle = { x: pill.left + size.width / 2, y: there.y };
+						settleAt(free ? snapToWalls(freeAt(middle, room), pill, room) : dockAt(there, room));
+					})
+					.catch(() => settleAt(next));
 
 				// The click that follows pointerup must not expand / press buttons.
 				suppressClick.current = true;

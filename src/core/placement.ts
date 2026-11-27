@@ -61,9 +61,16 @@ export function place(
 		const cx = p.x * stage.width;
 		const cy = p.y * stage.height;
 		const top = upward ? cy + REST_HALF - size.height : cy - REST_HALF;
+		// 0 and 1 mean "against that wall", whatever the island's size.
+		const low = stage.height - size.height - extra.bottom;
 		return {
-			x: horizontal(size, stage, extra, cx - size.width / 2),
-			y: clamp(top, extra.top, stage.height - size.height - extra.bottom),
+			x:
+				p.x <= 0
+					? extra.left
+					: p.x >= 1
+						? stage.width - size.width - extra.right
+						: horizontal(size, stage, extra, cx - size.width / 2),
+			y: p.y <= 0 ? extra.top : p.y >= 1 ? low : clamp(top, extra.top, low),
 		};
 	}
 	if (isSide(p.edge)) {
@@ -95,6 +102,21 @@ export function dockAt(center: { x: number; y: number }, stage: Size): Placement
 export function freeAt(center: { x: number; y: number }, stage: Size): Placement {
 	const fraction = (v: number, size: number) => Math.round(clamp(v / Math.max(1, size), 0, 1) * 10000) / 10000;
 	return { kind: "free", x: fraction(center.x, stage.width), y: fraction(center.y, stage.height) };
+}
+
+/** Let go this close to a screen edge, a free island sticks to it. */
+const WALL_SNAP = 24;
+
+/** Free look: dropped near a wall (or past it), the island ends up flush against it, like a Windows window. */
+export function snapToWalls(p: Placement, box: Size & { left: number; top: number }, stage: Size): Placement {
+	if (p.kind !== "free") return p;
+	const near = (low: number, high: number, size: number, value: number) =>
+		low <= WALL_SNAP ? 0 : high >= size - WALL_SNAP ? 1 : value;
+	return {
+		kind: "free",
+		x: near(box.left, box.left + box.width, stage.width, p.x),
+		y: near(box.top, box.top + box.height, stage.height, p.y),
+	};
 }
 
 /** The spot a new install starts from: top middle, 8 px below the edge. */

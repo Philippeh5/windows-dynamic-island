@@ -42,7 +42,6 @@ export function PosteQuestion({ item, more }: { item: PosteApproval; more: numbe
 	return (
 		<div
 			className="flex min-w-0 flex-col gap-2 rounded-[20px] bg-card px-4 py-3 shadow-[inset_0_0_0_1px_rgba(255,159,10,0.45)]"
-			data-no-drag
 			onClick={(e) => e.stopPropagation()}
 		>
 			<div className="flex items-center gap-2">
