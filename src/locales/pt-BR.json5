@@ -310,6 +310,8 @@
       started: "Sessão iniciada",
       back: "Voltar",
       next: "Próxima",
+      noMessages: "Nenhuma mensagem ainda",
+      working: "Trabalhando…",
       showScreen: "Mostrar o terminal",
       hideScreen: "Ocultar o terminal",
       sessions: "Sessões no posto",

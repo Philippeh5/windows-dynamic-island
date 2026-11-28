@@ -328,6 +328,8 @@
       started: "Session started",
       back: "Back",
       next: "Next",
+      noMessages: "No messages yet",
+      working: "Working…",
       showScreen: "Show the terminal",
       hideScreen: "Hide the terminal",
       sessions: "Sessions on the post",

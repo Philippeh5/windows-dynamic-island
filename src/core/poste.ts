@@ -74,6 +74,13 @@ export interface PosteSession {
 	status: string;
 	terminal?: boolean;
 	detail?: string;
+	/** `claude`, `codex`, `opencode`… */
+	provider?: string;
+}
+
+export interface PosteMessage {
+	role: "user" | "assistant" | "tool" | "error";
+	text: string;
 }
 
 export interface PosteService {

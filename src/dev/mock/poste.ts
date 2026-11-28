@@ -67,7 +67,7 @@ const state = provider<PosteState>(POSTE_PROVIDER, {
 			terminal: true,
 			detail: "Which database?",
 		},
-		{ host: "oracle", id: "a1", title: "codex · site", group: "active", status: "running" },
+		{ host: "oracle", id: "a1", title: "codex · site", group: "active", status: "running", provider: "codex" },
 	],
 	taskLists: [
 		{
@@ -196,7 +196,16 @@ export const poste = defineMock({
 			deleteTask: (payload) => drop(payload),
 			answer: () => state.set((s) => ({ ...s, approvals: (s.approvals ?? []).slice(1) })),
 			send: () => ({ sent: true }),
-			screen: () => ({ lines: ["⏺ Done.", "> "] }),
+			screen: (payload) =>
+				(payload as { terminal: boolean }).terminal
+					? { lines: ["⏺ Done.", "> "] }
+					: {
+							messages: [
+								{ role: "user", text: "Add a dark theme to the shop" },
+								{ role: "tool", text: "Read, Edit" },
+								{ role: "assistant", text: "Done: the theme follows the system setting. Shall I add a toggle?" },
+							],
+						},
 			fetch: (payload) => page(payload as { what: string }),
 			say: (payload) => {
 				thread.push({ role: "user", text: (payload as { text: string }).text }, { role: "assistant", text: "Noted." });

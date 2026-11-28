@@ -7,6 +7,7 @@ import { useT } from "../../../../core/i18n";
 import { useIsland } from "../../../../core/island";
 import { POSTE_PROVIDER, type PosteSession, type PosteState } from "../../../../core/poste";
 import { NewSession } from "./NewSession";
+import { SessionThread } from "./SessionThread";
 
 const DOT: Record<string, string> = { active: "bg-[#30d158]", waiting: "bg-[#ff9f0a]", error: "bg-[#ff453a]" };
 
@@ -117,6 +118,7 @@ function SessionDetail({ session }: { session: PosteSession }) {
 
 	return (
 		<div className="flex flex-col gap-1.5 px-2 pt-1 pb-1.5">
+			{!session.terminal && <SessionThread session={session} />}
 			{session.terminal && (
 				<button
 					type="button"
@@ -140,7 +142,7 @@ function SessionDetail({ session }: { session: PosteSession }) {
 				<input
 					className="h-7 min-w-0 flex-1 rounded-lg bg-white/8 px-2 text-[12px] outline-none"
 					value={text}
-					maxLength={1000}
+					maxLength={session.terminal ? 1000 : 4000}
 					placeholder={t("agents.poste.message")}
 					aria-label={t("agents.poste.message")}
 					onPointerDown={() => command("focus_island")}

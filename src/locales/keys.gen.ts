@@ -214,6 +214,8 @@ export type MessageKey =
 	| "agents.poste.started"
 	| "agents.poste.back"
 	| "agents.poste.next"
+	| "agents.poste.noMessages"
+	| "agents.poste.working"
 	| "agents.poste.showScreen"
 	| "agents.poste.hideScreen"
 	| "agents.poste.sessions"
