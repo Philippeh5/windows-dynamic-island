@@ -369,6 +369,7 @@
     noSessions: "Nenhuma sessão recente",
     contextUsed: "Contexto usado",
     noLimits: "Sem dados de limite ainda",
+    noPlanLimits: "Sem limites de plano",
     tokensToday: "Tokens hoje",
     tokens: {
       input: "Entrada",

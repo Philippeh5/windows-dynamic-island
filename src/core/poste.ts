@@ -10,7 +10,7 @@ export const POSTE_PROVIDER = "poste";
 export interface PosteQuota {
 	name: string;
 	windows: { label: string; used: number; resetsAt?: string | null }[];
-	/** Tokens the agents used on the post's machine (Claude only today). */
+	/** Tokens this agent used on the post's machine. */
 	tokensToday?: TokenUsage;
 	usage?: UsageHistory;
 }

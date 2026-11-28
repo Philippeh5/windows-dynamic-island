@@ -393,6 +393,7 @@
     noSessions: "No recent sessions",
     contextUsed: "Context used",
     noLimits: "No limit data yet",
+    noPlanLimits: "No plan limits",
     tokensToday: "Tokens today",
     tokens: {
       input: "Input",

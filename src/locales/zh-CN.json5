@@ -389,6 +389,7 @@
     noSessions: "暂无近期会话",
     contextUsed: "已使用上下文",
     noLimits: "暂无限额数据",
+    noPlanLimits: "没有套餐限额",
     tokensToday: "今日 Token 消耗",
     tokens: {
       input: "输入",

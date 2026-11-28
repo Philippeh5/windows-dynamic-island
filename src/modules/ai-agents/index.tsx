@@ -11,6 +11,7 @@ import { withPosteAgent } from "../../core/posteData";
  *   claude/   Claude Code integration (one `AgentDefinition`)
  *   codex/    OpenAI Codex integration
  *   antigravity/  Google Antigravity (plan quota only)
+ *   gateway/  OpenRouter and NVIDIA (tokens counted by the post)
  *
  * To support another agent, add a folder exporting an `AgentDefinition` and
  * append it to `agents` below.
@@ -30,9 +31,10 @@ import { StatusGlyph } from "./common/components/StatusGlyph";
 import { useNow } from "./common/format";
 import { pickPrimary } from "./common/primary";
 import type { AgentDefinition, AgentSessionRef, AgentStatus } from "./common/types";
+import { nvidiaAgent, openRouterAgent } from "./gateway";
 import { agentSettings } from "./settings";
 
-const agents: AgentDefinition[] = [claudeAgent, codexAgent, antigravityAgent];
+const agents: AgentDefinition[] = [claudeAgent, codexAgent, antigravityAgent, openRouterAgent, nvidiaAgent];
 
 /** How long a finished turn keeps the island's attention. */
 const DONE_VISIBLE_MS = 8_000;

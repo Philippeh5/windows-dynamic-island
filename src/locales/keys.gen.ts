@@ -258,6 +258,7 @@ export type MessageKey =
 	| "agents.noSessions"
 	| "agents.contextUsed"
 	| "agents.noLimits"
+	| "agents.noPlanLimits"
 	| "agents.tokensToday"
 	| "agents.tokens.input"
 	| "agents.tokens.output"

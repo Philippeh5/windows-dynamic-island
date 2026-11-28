@@ -8,28 +8,38 @@ const inDays = (n: number, hour: number) => {
 	return d.toISOString();
 };
 
+/** Made-up token counts, in proportion to `scale`. */
+function sample(scale: number) {
+	const n = (value: number) => Math.round(value * scale);
+	return {
+		tokensToday: { input: n(520), output: n(3100), cacheRead: n(380_000), cacheWrite: n(21_000), messages: 24 },
+		usage: {
+			daily: [12, 48, 91, 143, 271, 169, 4].map((day, i) => ({
+				date: inDays(i - 6, 12).slice(0, 10),
+				tokens: n(day * 10_000),
+				responses: 10 + i,
+			})),
+			last5hTokens: n(94_000),
+		},
+	};
+}
+
 const state = provider<PosteState>(POSTE_PROVIDER, {
 	configured: true,
 	connected: true,
 	quotas: [
 		{
 			name: "Claude",
-			tokensToday: { input: 52_000, output: 310_000, cacheRead: 38_000_000, cacheWrite: 2_100_000, messages: 240 },
-			usage: {
-				daily: [12, 48, 91, 143, 271, 169, 40].map((n, i) => ({
-					date: inDays(i - 6, 12).slice(0, 10),
-					tokens: n * 1_000_000,
-					responses: 10 + i,
-				})),
-				last5hTokens: 9_400_000,
-			},
+			...sample(100),
 			windows: [
 				{ label: "5h", used: 44 },
 				{ label: "wk", used: 58 },
 			],
 		},
-		{ name: "Codex", windows: [{ label: "30d", used: 2 }] },
-		{ name: "Antigravity", windows: [{ label: "Gemini wk", used: 7 }] },
+		{ name: "Codex", windows: [{ label: "30d", used: 2 }], ...sample(3) },
+		{ name: "Antigravity", windows: [{ label: "Gemini wk", used: 7 }], ...sample(5) },
+		{ name: "OpenRouter", windows: [], ...sample(2) },
+		{ name: "NVIDIA", windows: [], ...sample(1) },
 	],
 	announces: [],
 	events: [{ id: "ev1", title: "Dentiste", start: inDays(14, 10), end: null }],
