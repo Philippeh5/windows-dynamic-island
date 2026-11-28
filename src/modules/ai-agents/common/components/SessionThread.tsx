@@ -7,20 +7,25 @@ import { POSTE_PROVIDER, type PosteMessage, type PosteSession } from "../../../.
 const READ_EVERY_MS = 3000;
 
 /** What was said in a session of the post, read again while it is open. */
-export function SessionThread({ session }: { session: PosteSession }) {
+export function SessionThread({ session, onRead }: { session: PosteSession; onRead?: (found: boolean) => void }) {
 	const t = useT();
 	const [messages, setMessages] = useState<PosteMessage[] | null>(null);
 	const [error, setError] = useState("");
 	const box = useRef<HTMLDivElement>(null);
 	const { host, id } = session;
+	const terminal = !!session.terminal;
+	const found = useRef(onRead);
+	found.current = onRead;
 
 	useEffect(() => {
 		let live = true;
 		const read = () =>
-			providerAction<{ messages: PosteMessage[] }>(POSTE_PROVIDER, "screen", { host, session: id, terminal: false })
+			providerAction<{ messages?: PosteMessage[] }>(POSTE_PROVIDER, "screen", { host, session: id, terminal })
 				.then((r) => {
 					if (!live) return;
-					setMessages(r?.messages ?? []);
+					// A terminal only has a thread when the post could read one.
+					found.current?.(!!r?.messages);
+					setMessages(r?.messages ?? (terminal ? null : []));
 					setError("");
 				})
 				.catch((e) => live && setError(String(e)));
@@ -30,7 +35,7 @@ export function SessionThread({ session }: { session: PosteSession }) {
 			live = false;
 			window.clearInterval(timer);
 		};
-	}, [host, id]);
+	}, [host, id, terminal]);
 
 	// Follows the conversation: down to the newest message when one arrives.
 	const last = messages?.at(-1)?.text;
@@ -38,6 +43,7 @@ export function SessionThread({ session }: { session: PosteSession }) {
 		if (last !== undefined && box.current) box.current.scrollTop = box.current.scrollHeight;
 	}, [last]);
 
+	if (terminal && !messages) return null;
 	return (
 		<div ref={box} className="flex max-h-64 flex-col gap-1.5 overflow-y-auto" data-scroll>
 			{messages?.map((m, i) =>

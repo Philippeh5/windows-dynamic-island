@@ -118,7 +118,7 @@ function SessionDetail({ session }: { session: PosteSession }) {
 
 	return (
 		<div className="flex flex-col gap-1.5 px-2 pt-1 pb-1.5">
-			{!session.terminal && <SessionThread session={session} />}
+			{(!session.terminal || session.provider?.startsWith("claude")) && <SessionThread session={session} />}
 			{session.terminal && (
 				<button
 					type="button"
