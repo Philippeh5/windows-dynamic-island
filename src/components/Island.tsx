@@ -123,7 +123,12 @@ export function Island() {
 
 	return (
 		<IslandContext.Provider value={api}>
-			<PeekProvider entries={ctl.entries} upward={drag.upward} side={side} onHover={ctl.hoverBubble}>
+			<PeekProvider
+				entries={[...ctl.entries, ...waiting(ctl.entries)]}
+				upward={drag.upward}
+				side={side}
+				onHover={ctl.hoverBubble}
+			>
 				<PluginBackgrounds />
 				<div className="pointer-events-none fixed inset-0 overflow-hidden">
 					{/* The island's spot on screen; the shell inside only deforms and resizes. */}

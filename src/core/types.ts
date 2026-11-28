@@ -31,6 +31,8 @@ export interface ModuleView {
 	peek?: { node: ReactNode; width: number; height?: number };
 	/** Something waiting for the user: a ringed bubble beside the island, whose card opens on hover. */
 	alert?: { color: string; node: ReactNode; width: number };
+	/** Several things waiting at once: one bubble each, with its own icon (`alert` is then the first). */
+	bubbles?: { key: string; color: string; node: ReactNode; width: number; icon: ReactNode; label: string }[];
 	/** Full panel shown on hover / peek. */
 	expanded: ReactNode;
 	/** Panel size in px (default 560×190). */

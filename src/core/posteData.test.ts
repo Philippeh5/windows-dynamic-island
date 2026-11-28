@@ -66,4 +66,13 @@ describe("poste data", () => {
 		});
 		expect(withPosteAgent(snapshot, remote, "codex")).toBe(snapshot);
 	});
+
+	test("a question is not also a notification", () => {
+		const announces = [
+			{ id: "1", at: "2026-11-28T10:00:00Z", text: "Claude pose une question (x) : ?", source: "question" },
+			{ id: "2", at: "2026-11-28T10:00:00Z", text: "❓ Question d'un agent" },
+			{ id: "3", at: "2026-11-28T10:00:00Z", text: "Fini" },
+		];
+		expect(posteNotifications({ ...poste, announces }, 0, 0).map((n) => n.title)).toEqual(["Fini"]);
+	});
 });

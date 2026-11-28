@@ -5,10 +5,24 @@ import type { ModuleEntry } from "../../core/types";
 import { BUBBLE, BUBBLE_GAP } from "./geometry";
 import { useBubblePeek } from "./peek";
 
-export type Waiting = ModuleEntry & { view: { alert: NonNullable<ModuleEntry["view"]["alert"]> } };
+export type Waiting = ModuleEntry & {
+	/** The bubble's own key: the module's id, plus the thing's when it has several. */
+	key: string;
+	view: { alert: NonNullable<ModuleEntry["view"]["alert"]> & { label?: string } };
+};
 
-/** The modules with something waiting for the user. */
-export const waiting = (entries: ModuleEntry[]) => entries.filter((e): e is Waiting => !!e.view.alert);
+/** What is waiting for the user: one entry per bubble. */
+export const waiting = (entries: ModuleEntry[]): Waiting[] =>
+	entries.flatMap(({ module, view }) => {
+		if (view.bubbles?.length) {
+			return view.bubbles.map((b) => ({
+				module,
+				key: `${module.id}:${b.key}`,
+				view: { ...view, alert: b, icon: b.icon },
+			}));
+		}
+		return view.alert ? [{ module, key: module.id, view: { ...view, alert: view.alert } }] : [];
+	});
 
 /**
  * Things waiting (a question, a notification…) as ringed bubbles beside the
@@ -46,16 +60,16 @@ export function Satellites({
 		>
 			<AnimatePresence>
 				{entries.map((entry) => (
-					<Satellite key={entry.module.id} entry={entry} onOpen={onOpen} />
+					<Satellite key={entry.key} entry={entry} onOpen={onOpen} />
 				))}
 			</AnimatePresence>
 		</div>
 	);
 }
 
-function Satellite({ entry: { module, view }, onOpen }: { entry: Waiting; onOpen: (moduleId: string) => void }) {
+function Satellite({ entry: { module, key, view }, onOpen }: { entry: Waiting; onOpen: (moduleId: string) => void }) {
 	const t = useT();
-	const { close, ...peek } = useBubblePeek(module.id);
+	const { close, ...peek } = useBubblePeek(key);
 	return (
 		<motion.button
 			type="button"
@@ -70,7 +84,7 @@ function Satellite({ entry: { module, view }, onOpen }: { entry: Waiting; onOpen
 			initial={{ scale: 0.3, opacity: 0 }}
 			animate={{ scale: 1, opacity: 1 }}
 			exit={{ scale: 0.3, opacity: 0 }}
-			aria-label={t(module.title)}
+			aria-label={view.alert.label ?? t(module.title)}
 			{...peek}
 			onClick={(e) => {
 				e.stopPropagation();

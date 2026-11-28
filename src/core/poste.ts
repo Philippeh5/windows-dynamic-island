@@ -63,6 +63,9 @@ export interface PosteApproval {
 	/** Only the post itself may allow this one. */
 	refuseOnly: boolean;
 	questions: PosteQuestion[];
+	/** The session asking, and its agent (`claude`, `opencode`…). */
+	session?: string;
+	provider?: string;
 }
 
 export interface PosteSession {

@@ -71,22 +71,26 @@ export function posteNotifications(
 	readAt: number,
 	clearedAt: number,
 ): NotificationItem[] {
-	return (poste?.announces ?? [])
-		.map((a, i) => {
-			const receivedAt = Date.parse(a.at) || 0;
-			return {
-				id: -(i + 1),
-				app: SOURCES[a.source ?? ""] ?? "Poste",
-				aumid: "",
-				logo: null,
-				title: a.text,
-				body: null,
-				receivedAt,
-				read: receivedAt <= readAt,
-			};
-		})
-		.filter((n) => n.receivedAt > clearedAt)
-		.sort((a, b) => b.receivedAt - a.receivedAt);
+	return (
+		(poste?.announces ?? [])
+			// A question has its own bubble and card: it is not a notification too.
+			.filter((a) => a.source !== "question" && !a.text.startsWith("❓"))
+			.map((a, i) => {
+				const receivedAt = Date.parse(a.at) || 0;
+				return {
+					id: -(i + 1),
+					app: SOURCES[a.source ?? ""] ?? "Poste",
+					aumid: "",
+					logo: null,
+					title: a.text,
+					body: null,
+					receivedAt,
+					read: receivedAt <= readAt,
+				};
+			})
+			.filter((n) => n.receivedAt > clearedAt)
+			.sort((a, b) => b.receivedAt - a.receivedAt)
+	);
 }
 
 export const POSTE_CALENDAR = "poste";

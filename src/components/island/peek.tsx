@@ -57,7 +57,8 @@ export function PeekProvider({
 	onHover,
 	children,
 }: {
-	entries: ModuleEntry[];
+	/** Modules, and the bubbles that have their own key. */
+	entries: (ModuleEntry & { key?: string })[];
 	/** The island sits low: cards open above the bubbles. */
 	upward: boolean;
 	/** Docked on a side edge: cards open beside the bubbles. */
@@ -100,13 +101,13 @@ export function PeekProvider({
 		(id: string, bubble: HTMLElement) => {
 			stay();
 			setTallest(0);
-			const alert = !!latest.current.find((e) => e.module.id === id)?.view.alert;
+			const alert = !!latest.current.find((e) => (e.key ?? e.module.id) === id)?.view.alert;
 			setShown({ id, alert, bubble: bubble.getBoundingClientRect() });
 		},
 		[stay],
 	);
 
-	const entry = shown && entries.find((e) => e.module.id === shown.id);
+	const entry = shown && entries.find((e) => (e.key ?? e.module.id) === shown.id);
 	// Its module went away, or what was waiting has been answered: nothing left to show.
 	const gone = !!shown && (!entry || (shown.alert && !entry.view.alert));
 	useEffect(() => {

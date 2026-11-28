@@ -24,7 +24,7 @@ import { codexAgent } from "./codex";
 import { AgentCompactLeft, AgentCompactRight } from "./common/components/AgentCompact";
 import { AgentsPanel } from "./common/components/AgentsPanel";
 import { AgentsSettings } from "./common/components/AgentsSettings";
-import { PermissionPrompt } from "./common/components/PermissionPrompt";
+import { sessionBubbles } from "./common/components/bubbles";
 import { PosteQuestion } from "./common/components/PosteQuestion";
 import { PosteSessions } from "./common/components/PosteSessions";
 import { StatusGlyph } from "./common/components/StatusGlyph";
@@ -50,14 +50,6 @@ const MAX_HEIGHT = 640;
 
 const RANK: Record<AgentStatus, number> = { waiting: 0, limitsReset: 1, working: 2, done: 3, idle: 4 };
 const PRIORITY: Record<AgentStatus, number> = { waiting: 90, limitsReset: 80, done: 70, working: 60, idle: 0 };
-
-/** The first permission waiting for an answer. */
-function AskingCard({ sessions, now }: { sessions: AgentSessionRef[]; now: number }) {
-	const asking = sessions.filter((s) => s.session.permission && s.agent.decide);
-	const first = asking[0];
-	if (!first?.session.permission) return null;
-	return <PermissionPrompt key={first.session.permission.id} item={first} now={now} more={asking.length - 1} />;
-}
 
 export const aiAgentsModule: IslandModule = {
 	id: "ai-agents",
@@ -124,6 +116,8 @@ export const aiAgentsModule: IslandModule = {
 				(snapshots.some((s) => s.usage?.daily.length) ? USAGE_CHART : 0) +
 				(visible.length > 1 ? AGENT_TABS : 0);
 
+		const bubbles = sessionBubbles(approvals, sessions, now);
+
 		return {
 			active: !!hot || !!question,
 			priority: question ? PRIORITY.waiting : hot ? PRIORITY[hot.session.status] : 0,
@@ -145,16 +139,9 @@ export const aiAgentsModule: IslandModule = {
 						right: <AgentCompactRight hot={hot} />,
 						width: 340,
 					},
-			// A question or a permission waiting: answered from its bubble.
-			alert: question
-				? {
-						color: "#ff9f0a",
-						width: 480,
-						node: <PosteQuestion key={question.id} item={question} more={approvals.length - 1} />,
-					}
-				: asking
-					? { color: "#ff9f0a", width: 480, node: <AskingCard sessions={sessions} now={now} /> }
-					: undefined,
+			// Questions and permissions waiting: one bubble per session, answered from it.
+			alert: bubbles[0],
+			bubbles,
 			summary: {
 				left: (
 					<span className="flex items-center gap-2 pl-2 text-[13px] font-semibold whitespace-nowrap">

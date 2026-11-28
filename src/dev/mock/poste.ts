@@ -56,7 +56,67 @@ const state = provider<PosteState>(POSTE_PROVIDER, {
 		{ id: "claude", label: "Claude Code" },
 		{ id: "codex", label: "Codex" },
 	],
-	approvals: [],
+	approvals: new URLSearchParams(location.search).has("ask")
+		? [
+				{
+					id: "q1",
+					session: "q1",
+					provider: "claude",
+					title: "Claude · boutique",
+					body: "",
+					danger: false,
+					refuseOnly: false,
+					questions: [
+						{
+							question: "Which database?",
+							multiSelect: false,
+							options: [
+								{ label: "SQLite", description: "" },
+								{ label: "Postgres", description: "" },
+							],
+						},
+					],
+				},
+				{
+					id: "q2",
+					session: "q2",
+					provider: "claude",
+					title: "Claude · site",
+					body: "",
+					danger: false,
+					refuseOnly: false,
+					questions: [
+						{
+							question: "Which database?",
+							multiSelect: false,
+							options: [
+								{ label: "SQLite", description: "" },
+								{ label: "Postgres", description: "" },
+							],
+						},
+					],
+				},
+				{
+					id: "q3",
+					session: "q3",
+					provider: "opencode",
+					title: "OpenCode · site",
+					body: "",
+					danger: false,
+					refuseOnly: false,
+					questions: [
+						{
+							question: "Which database?",
+							multiSelect: false,
+							options: [
+								{ label: "SQLite", description: "" },
+								{ label: "Postgres", description: "" },
+							],
+						},
+					],
+				},
+			]
+		: [],
 	sessions: [
 		{
 			host: "oracle",
