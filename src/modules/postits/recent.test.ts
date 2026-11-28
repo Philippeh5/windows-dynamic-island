@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { currentChecklist, type Postit, RECENT_MS } from "./recent";
+import { aboutNote, currentChecklist, type Postit, RECENT_MS } from "./recent";
 
 const note = (path: string, text: string, updated: number, epingle = false): Postit => ({
 	path,
@@ -27,5 +27,10 @@ describe("the checklist beside the island", () => {
 		expect(currentChecklist([pinned], now)?.path).toBe("p");
 		expect(currentChecklist([pinned], now, { p: 5 })).toBeNull();
 		expect(currentChecklist([{ ...pinned, updated: 6 }], now, { p: 5 })?.path).toBe("p");
+	});
+
+	test("a subject finds its project's session", () => {
+		const sessions = [{ title: "claude · BlastWin" }, { title: "claude · paseo-lab" }];
+		expect(aboutNote({ ...note("p", "", 0), sujets: ["Paseo Lab"] }, sessions)).toEqual([sessions[1]]);
 	});
 });

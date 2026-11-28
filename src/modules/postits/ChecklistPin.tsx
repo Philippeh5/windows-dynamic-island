@@ -9,7 +9,7 @@ import { usePosteAction, usePostePage } from "../../core/usePostePage";
 import { noteLines } from "./checklist";
 import { NoteText } from "./NoteText";
 import type { Postits } from "./PostitsPanel";
-import { currentChecklist, type Postit } from "./recent";
+import { aboutNote, currentChecklist, type Postit } from "./recent";
 
 const LEAVE_MS = 350;
 const CARD = 320;
@@ -212,8 +212,7 @@ function Ask({ note, sessions }: { note: Postit; sessions: PosteSession[] }) {
 	const [text, setText] = useState("");
 	const [picked, setPicked] = useState("");
 	const [sent, setSent] = useState(false);
-	const subjects = note.sujets.map((s) => s.toLowerCase());
-	const matching = sessions.filter((s) => subjects.some((x) => s.title.toLowerCase().includes(x)));
+	const matching = aboutNote(note, sessions);
 	const choices = matching.length ? matching : sessions;
 	const session = choices.find((s) => s.id === picked) ?? choices[0];
 	if (!session) return null;
