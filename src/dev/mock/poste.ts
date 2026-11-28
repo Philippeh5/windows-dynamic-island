@@ -162,7 +162,7 @@ function page({ what }: { what: string }) {
 		const text =
 			"# Boutique\n- [ ] Check the payment page\n- [x] Logo\n- [ ] **Course** [Options 101](https://example.test/a/very/long/address?x=1) · *free*";
 		const shown = note ?? { text, couleur: "jaune" };
-		return { postits: [{ path: "a.md", ...shown, sujets: ["boutique"], epingle: true }] };
+		return { postits: [{ path: "a.md", ...shown, sujets: ["boutique"], epingle: true, updated: Date.now() }] };
 	}
 	if (what === "workflows") {
 		return { workflows: [{ id: "digest", name: "Weekly digest", enabled: flowOn, running: false, last: null }] };

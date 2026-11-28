@@ -15,6 +15,7 @@ import { useIslandDrag } from "../core/useIslandDrag";
 import { modules } from "../modules";
 import { requestAskFocus } from "../modules/ask/store";
 import { requestFindFocus } from "../modules/find/store";
+import { ChecklistPin } from "../modules/postits/ChecklistPin";
 import { AmbientBubbles, SecondaryBubble } from "./island/Bubbles";
 import { islandContent } from "./island/content";
 import { GlassProbes } from "./island/GlassProbes";
@@ -228,6 +229,16 @@ export function Island() {
 									mirrored={edge === "left"}
 									onOpen={ctl.expand}
 								/>
+
+								{ambients && !side && (
+									// Beside the island, after its other bubble: the checklist at hand.
+									<div
+										className={cn("pointer-events-none absolute flex", drag.upward ? "bottom-0" : "top-0")}
+										style={{ left: `calc(100% + ${BUBBLE_GAP + second}px)` }}
+									>
+										<ChecklistPin size={BUBBLE} upward={drag.upward} onHover={ctl.hoverBubble} />
+									</div>
+								)}
 
 								<AmbientBubbles entries={calm} visible={ambients} shrunk={mode === "idle" && !windows} {...bubble} />
 								<SecondaryBubble entry={showSecondary ? secondary : undefined} {...bubble} />

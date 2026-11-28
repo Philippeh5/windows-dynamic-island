@@ -18,6 +18,8 @@ export interface Postits {
 		sujets: string[];
 		couleur?: string;
 		epingle: boolean;
+		/** Unix ms of the last change. */
+		updated?: number;
 	}[];
 }
 

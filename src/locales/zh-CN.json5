@@ -112,6 +112,11 @@
     send: "发送",
   },
   postits: {
+    checklist: "清单",
+    pin: "保持打开",
+    hide: "隐藏直到更新",
+    session: "会话",
+    ask: "向 {session} 提问…",
     edit: "编辑",
     cancel: "取消",
     save: "保存",

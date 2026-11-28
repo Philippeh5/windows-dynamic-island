@@ -103,6 +103,11 @@
     send: "Enviar",
   },
   postits: {
+    checklist: "Lista",
+    pin: "Manter aberta",
+    hide: "Ocultar até mudar",
+    session: "Sessão",
+    ask: "Perguntar a {session}…",
     edit: "Editar",
     cancel: "Cancelar",
     save: "Salvar",
