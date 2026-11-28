@@ -1,5 +1,5 @@
 /** Turns the post's data into what the island's pages already understand. */
-import type { UsageLimit } from "../modules/ai-agents/common/types";
+import type { AgentSnapshot, UsageHistory, UsageLimit } from "../modules/ai-agents/common/types";
 import type { CalEvent, CalendarState } from "../modules/clock/types";
 import type { NotificationItem } from "../modules/notifications/types";
 import type { PosteState } from "./poste";
@@ -19,6 +19,48 @@ export function posteLimits(poste: PosteState | undefined, agent: string): Usage
 			resetsAt: resets > Date.now() ? resets : null,
 		};
 	});
+}
+
+/**
+ * One agent's card with what the post knows about it: its plan limits replace
+ * the local ones, its tokens add up with those used on this computer.
+ */
+export function withPosteAgent(snapshot: AgentSnapshot, poste: PosteState | undefined, agent: string): AgentSnapshot {
+	const limits = posteLimits(poste, agent);
+	const quota = poste?.quotas?.find((q) => q.name.toLowerCase().includes(agent));
+	const { tokensToday, usage } = quota ?? {};
+	if (!limits.length && !tokensToday && !usage) return snapshot;
+	const local = snapshot.tokensToday;
+	return {
+		...snapshot,
+		available: true,
+		limits: limits.length ? limits : snapshot.limits,
+		tokensToday: tokensToday
+			? {
+					input: tokensToday.input + (local?.input ?? 0),
+					output: tokensToday.output + (local?.output ?? 0),
+					cacheRead: tokensToday.cacheRead + (local?.cacheRead ?? 0),
+					cacheWrite: tokensToday.cacheWrite + (local?.cacheWrite ?? 0),
+					messages: tokensToday.messages + (local?.messages ?? 0),
+				}
+			: local,
+		usage: usage ? addUsage(usage, snapshot.usage) : snapshot.usage,
+	};
+}
+
+/** Days are matched by date: the post's seven days are kept. */
+function addUsage(remote: UsageHistory, local: UsageHistory | undefined): UsageHistory {
+	return {
+		daily: remote.daily.map((day) => {
+			const here = local?.daily.find((d) => d.date === day.date);
+			return {
+				date: day.date,
+				tokens: day.tokens + (here?.tokens ?? 0),
+				responses: day.responses + (here?.responses ?? 0),
+			};
+		}),
+		last5hTokens: remote.last5hTokens + (local?.last5hTokens ?? 0),
+	};
 }
 
 const SOURCES: Record<string, string> = { poste: "Poste", workflow: "Workflow", agent: "Hermès" };

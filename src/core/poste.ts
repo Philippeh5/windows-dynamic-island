@@ -3,11 +3,16 @@
  * Its data shows up in the island's own pages: limits in AI Agents,
  * announcements in Notifications, events in the calendar.
  */
+import type { TokenUsage, UsageHistory } from "../modules/ai-agents/common/types";
+
 export const POSTE_PROVIDER = "poste";
 
 export interface PosteQuota {
 	name: string;
 	windows: { label: string; used: number; resetsAt?: string | null }[];
+	/** Tokens the agents used on the post's machine (Claude only today). */
+	tokensToday?: TokenUsage;
+	usage?: UsageHistory;
 }
 
 export interface PosteAnnounce {

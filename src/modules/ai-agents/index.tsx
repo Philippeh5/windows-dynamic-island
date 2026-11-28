@@ -2,7 +2,7 @@ import { SparklesIcon } from "lucide-react";
 import { useProvider } from "../../core/bridge";
 import { useT } from "../../core/i18n";
 import { POSTE_PROVIDER, type PosteState } from "../../core/poste";
-import { posteLimits } from "../../core/posteData";
+import { withPosteAgent } from "../../core/posteData";
 /**
  * AI Agents module — shows what coding agents are doing.
  *
@@ -78,12 +78,9 @@ export const aiAgentsModule: IslandModule = {
 		// Static list → stable hook order.
 		// biome-ignore lint/correctness/useHookAtTopLevel: the agent list is static, so the hook order is stable
 		const local = agents.map((a) => a.useAgent());
-		// Where the agents really run (the post), when this computer has no limits to show.
+		// Where the agents really run (the post): its limits and the tokens used there.
 		const poste = useProvider<PosteState>(POSTE_PROVIDER);
-		const all = local.map((snapshot, i) => {
-			const limits = posteLimits(poste, agents[i].id);
-			return limits.length ? { ...snapshot, available: true, limits } : snapshot;
-		});
+		const all = local.map((snapshot, i) => withPosteAgent(snapshot, poste, agents[i].id));
 		// Agents not on this computer stay out of sight (Claude is always shown).
 		const shown = agents.flatMap((agent, i) => (i === 0 || all[i].available ? [{ agent, snapshot: all[i] }] : []));
 		const visible = shown.map((s) => s.agent);

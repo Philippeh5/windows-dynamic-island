@@ -14,6 +14,15 @@ const state = provider<PosteState>(POSTE_PROVIDER, {
 	quotas: [
 		{
 			name: "Claude",
+			tokensToday: { input: 52_000, output: 310_000, cacheRead: 38_000_000, cacheWrite: 2_100_000, messages: 240 },
+			usage: {
+				daily: [12, 48, 91, 143, 271, 169, 40].map((n, i) => ({
+					date: inDays(i - 6, 12).slice(0, 10),
+					tokens: n * 1_000_000,
+					responses: 10 + i,
+				})),
+				last5hTokens: 9_400_000,
+			},
 			windows: [
 				{ label: "5h", used: 44 },
 				{ label: "wk", used: 58 },
